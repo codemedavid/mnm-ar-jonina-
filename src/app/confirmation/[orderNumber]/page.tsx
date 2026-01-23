@@ -1,21 +1,10 @@
 import Link from 'next/link';
-import { promises as fs } from 'fs';
-import path from 'path';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Order } from '@/lib/types';
 import { paymentMethods } from '@/lib/products';
+import { getOrderByNumber } from '@/lib/orders';
 
-async function getOrder(orderNumber: string): Promise<Order | null> {
-    try {
-        const dataPath = path.join(process.cwd(), 'data', 'orders.json');
-        const data = await fs.readFile(dataPath, 'utf-8');
-        const orders: Order[] = JSON.parse(data);
-        return orders.find(order => order.orderNumber === orderNumber) || null;
-    } catch {
-        return null;
-    }
-}
 
 export default async function ConfirmationPage({
     params,
@@ -23,7 +12,7 @@ export default async function ConfirmationPage({
     params: Promise<{ orderNumber: string }>;
 }) {
     const { orderNumber } = await params;
-    const order = await getOrder(orderNumber);
+    const order = await getOrderByNumber(orderNumber);
     const payment = paymentMethods.find(p => p.id === order?.paymentMethod);
 
     if (!order) {
