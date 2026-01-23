@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Order, OrderStatus } from '@/lib/types';
 import { BUSINESS_INFO } from '@/lib/products';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 type Tab = 'orders' | 'products' | 'couriers' | 'payments';
 
@@ -954,12 +955,9 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                             onChange={e => setForm({ ...form, category: e.target.value })}
                             style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
                         />
-                        <input
-                            type="text"
-                            placeholder="Image path (optional)"
+                        <ImageUpload
                             value={form.image}
-                            onChange={e => setForm({ ...form, image: e.target.value })}
-                            style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                            onChange={(url) => setForm({ ...form, image: url })}
                         />
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button onClick={saveProduct} style={{
