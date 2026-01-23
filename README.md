@@ -133,3 +133,4 @@ For production deployment:
 ## Support
 
 For issues or questions, contact the developer.
+# mnm-ar-jonina-mini-store
