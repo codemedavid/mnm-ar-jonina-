@@ -1,0 +1,18 @@
+[
+  {
+    "id": "tirz-20mg-vial",
+    "name": "Tirzepatide 20mg (vial only)",
+    "description": "Tirzepatide 20mg vial without bac water",
+    "price": 1600,
+    "image": "/placeholder.svg",
+    "category": "Vials Only"
+  },
+  {
+    "id": "tirz-30mg-vial",
+    "name": "Tirzepatide 30mg (Vial Only)",
+    "description": "Tirzepatide 30mg vial without bacwater",
+    "price": 1800,
+    "image": "/placeholder.svg",
+    "category": "Vials Only"
+  }
+]

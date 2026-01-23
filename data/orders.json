@@ -1,0 +1,61 @@
+[
+  {
+    "items": [
+      {
+        "product": {
+          "id": "prod-001",
+          "name": "Product 1",
+          "description": "High-quality product with premium materials",
+          "price": 299,
+          "image": "/products/product1.jpg",
+          "category": "Main"
+        },
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "fullName": "jN",
+      "email": "forpersonalonly191@gmail.com",
+      "contactNumber": "13456789",
+      "deliveryAddress": "SDFGHJKL",
+      "notes": ""
+    },
+    "paymentMethod": "bank",
+    "total": 299,
+    "orderNumber": "ORD-20260123-8358",
+    "status": "confirmed",
+    "createdAt": "2026-01-23T05:15:06.582Z",
+    "updatedAt": "2026-01-23T05:27:55.024Z",
+    "trackingNumber": "",
+    "courier": ""
+  },
+  {
+    "items": [
+      {
+        "product": {
+          "id": "prod-001",
+          "name": "Product 1",
+          "description": "High-quality product with premium materials",
+          "price": 299,
+          "image": "/placeholder.svg",
+          "category": "Main"
+        },
+        "quantity": 1
+      }
+    ],
+    "customer": {
+      "fullName": "joninasss",
+      "email": "forpersonalonly191@gmail.com",
+      "contactNumber": "099999999",
+      "deliveryAddress": "houseeee detailsss",
+      "notes": "just notes"
+    },
+    "paymentMethod": "gcash",
+    "courier": "J&T Express",
+    "total": 299,
+    "orderNumber": "ORD-20260123-2267",
+    "status": "pending",
+    "createdAt": "2026-01-23T05:47:31.559Z",
+    "updatedAt": "2026-01-23T05:47:31.559Z"
+  }
+]

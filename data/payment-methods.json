@@ -1,0 +1,20 @@
+[
+    {
+        "id": "gcash",
+        "name": "GCash",
+        "details": "Send to: 09XX XXX XXXX (Juan Dela Cruz)",
+        "qrCode": "/qr/gcash-qr.png"
+    },
+    {
+        "id": "bank",
+        "name": "Bank Transfer",
+        "details": "BDO Account: 1234 5678 9012 (Juan Dela Cruz)",
+        "qrCode": "/qr/bank-qr.png"
+    },
+    {
+        "id": "cod",
+        "name": "Cash on Delivery",
+        "details": "Pay when you receive your order",
+        "qrCode": ""
+    }
+]
