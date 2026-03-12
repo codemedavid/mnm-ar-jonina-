@@ -8,8 +8,8 @@ import { Order, OrderStatus } from '@/lib/types';
 const statusSteps: { status: OrderStatus; label: string; icon: string }[] = [
     { status: 'pending', label: 'Pending', icon: '⏳' },
     { status: 'confirmed', label: 'Confirmed', icon: '✓' },
-    { status: 'shipped', label: 'Shipped', icon: '📦' },
-    { status: 'completed', label: 'Completed', icon: '🎉' },
+    { status: 'shipped', label: 'Shipped', icon: '→' },
+    { status: 'completed', label: 'Completed', icon: '✓' },
 ];
 
 function getStatusIndex(status: OrderStatus): number {
@@ -61,9 +61,19 @@ export default function TrackingPage() {
             <Header />
             <main className="page">
                 <div className="container" style={{ maxWidth: '800px' }}>
-                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                        <p style={{
+                            fontSize: '0.75rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.2em',
+                            color: 'var(--color-primary)',
+                            fontWeight: 600,
+                            marginBottom: '0.75rem',
+                        }}>
+                            Order Status
+                        </p>
                         <h1>Track Your Order</h1>
-                        <p className="text-muted">Enter your order number to see the status</p>
+                        <p className="text-muted">Enter your order number to see the latest status</p>
                     </div>
 
                     <div className="card" style={{ marginBottom: '2rem' }}>
@@ -93,7 +103,7 @@ export default function TrackingPage() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                                 <div>
                                     <h2 style={{ marginBottom: '0.25rem' }}>{order.orderNumber}</h2>
-                                    <p className="text-muted">
+                                    <p className="text-muted" style={{ fontSize: '0.875rem' }}>
                                         Ordered on {new Date(order.createdAt).toLocaleDateString('en-PH', {
                                             year: 'numeric',
                                             month: 'long',
@@ -108,7 +118,6 @@ export default function TrackingPage() {
                                 </span>
                             </div>
 
-                            {/* Status Timeline */}
                             {order.status !== 'cancelled' ? (
                                 <div className="tracking-timeline">
                                     {statusSteps.map((step, index) => (
@@ -123,15 +132,14 @@ export default function TrackingPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="alert" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171' }}>
+                                <div className="alert" style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>
                                     This order has been cancelled.
                                 </div>
                             )}
 
-                            {/* Tracking Info */}
                             {order.trackingNumber && (
                                 <div className="alert alert-info" style={{ marginTop: '1.5rem' }}>
-                                    <strong>📦 Shipping Information:</strong>
+                                    <strong>Shipping Information:</strong>
                                     <p style={{ marginTop: '0.5rem' }}>
                                         Courier: <strong>{order.courier || 'N/A'}</strong>
                                     </p>
@@ -141,13 +149,12 @@ export default function TrackingPage() {
                                 </div>
                             )}
 
-                            {/* Order Details */}
                             <div className="order-summary" style={{ marginTop: '1.5rem' }}>
                                 <h3 style={{ marginBottom: '1rem' }}>Order Details</h3>
                                 {order.items.map((item, index) => (
                                     <div key={index} className="summary-row">
                                         <span>{item.product.name} × {item.quantity}</span>
-                                        <span>₱{(item.product.price * item.quantity).toLocaleString()}</span>
+                                        <span style={{ fontWeight: 600 }}>₱{(item.product.price * item.quantity).toLocaleString()}</span>
                                     </div>
                                 ))}
                                 <div className="summary-row summary-total">
@@ -156,7 +163,6 @@ export default function TrackingPage() {
                                 </div>
                             </div>
 
-                            {/* Delivery Address */}
                             <div style={{ marginTop: '1.5rem' }}>
                                 <h4 style={{ marginBottom: '0.5rem' }}>Delivery Address</h4>
                                 <p className="text-muted">{order.customer.deliveryAddress}</p>

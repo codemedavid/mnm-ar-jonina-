@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fce7f3"/>
+      <stop offset="100%" stop-color="#fdf2f8"/>
+    </linearGradient>
+    <linearGradient id="vial" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#93c5fd"/>
+    </linearGradient>
+    <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="40" fill="url(#bg)"/>
+  <circle cx="75" cy="75" r="4" fill="#f9a8d4" opacity="0.6"/>
+  <circle cx="325" cy="95" r="3" fill="#93c5fd" opacity="0.5"/>
+  <text x="65" y="120" font-size="16" opacity="0.4">&#x2728;</text>
+  <text x="315" y="190" font-size="14" opacity="0.35">&#x1F4A7;</text>
+  <rect x="130" y="48" width="140" height="26" rx="13" fill="#3b82f6" opacity="0.12"/>
+  <text x="200" y="66" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#1d4ed8">COMPLETE SET</text>
+  <!-- aqualyx vials -->
+  <rect x="95" y="120" width="38" height="130" rx="7" fill="url(#vial)" opacity="0.12" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="99" y="160" width="30" height="84" rx="5" fill="url(#liquid)" opacity="0.5"/>
+  <rect x="101" y="113" width="26" height="12" rx="4" fill="url(#cap)"/>
+  <rect x="148" y="120" width="38" height="130" rx="7" fill="url(#vial)" opacity="0.12" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="152" y="155" width="30" height="89" rx="5" fill="url(#liquid)" opacity="0.55"/>
+  <rect x="154" y="113" width="26" height="12" rx="4" fill="url(#cap)"/>
+  <rect x="201" y="120" width="38" height="130" rx="7" fill="url(#vial)" opacity="0.12" stroke="#60a5fa" stroke-width="1.5"/>
+  <rect x="205" y="165" width="30" height="79" rx="5" fill="url(#liquid)" opacity="0.45"/>
+  <rect x="207" y="113" width="26" height="12" rx="4" fill="url(#cap)"/>
+  <!-- syringe -->
+  <g transform="translate(262, 105) rotate(15)">
+    <rect x="0" y="0" width="12" height="130" rx="3.5" fill="white" opacity="0.7" stroke="#93c5fd" stroke-width="1.5"/>
+    <rect x="2.5" y="45" width="7" height="80" rx="2" fill="#dbeafe" opacity="0.4"/>
+    <rect x="-1.5" y="-7" width="15" height="9" rx="3" fill="#93c5fd"/>
+    <rect x="3.5" y="-27" width="5" height="24" rx="2" fill="#e5e7eb"/>
+    <rect x="1.5" y="-31" width="9" height="7" rx="2.5" fill="#d1d5db"/>
+    <line x1="6" y1="130" x2="6" y2="152" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <rect x="130" y="265" width="80" height="28" rx="8" fill="white" opacity="0.85"/>
+  <text x="170" y="283" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#1d4ed8">AQUALYX</text>
+  <rect x="260" y="260" width="40" height="28" rx="6" fill="white" opacity="0.8" stroke="#93c5fd" stroke-width="1"/>
+  <text x="280" y="278" text-anchor="middle" font-family="sans-serif" font-size="6" fill="#2563eb">SWAB</text>
+  <text x="200" y="355" text-anchor="middle" font-size="22">&#x1F380;</text>
+</svg>

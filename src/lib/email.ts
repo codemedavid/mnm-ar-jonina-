@@ -3,6 +3,7 @@ import { Order } from './types';
 import { BUSINESS_INFO, paymentMethods } from './products';
 
 // Create transporter with Gmail SMTP
+// Create transporter with Gmail SMTP
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -10,6 +11,22 @@ const transporter = nodemailer.createTransport({
     pass: process.env.GMAIL_APP_PASSWORD,
   },
 });
+
+// Helper function to send email with retries
+async function sendEmailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3): Promise<void> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Email sent successfully to ${mailOptions.to}`);
+      return;
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed to send email to ${mailOptions.to}:`, error);
+      if (i === retries - 1) throw error; // Throw on last attempt
+      // Wait 1 second before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+}
 
 // Format order items for email
 function formatOrderItems(order: Order): string {
@@ -80,7 +97,7 @@ export async function sendAdminNotification(order: Order): Promise<void> {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmailWithRetry(mailOptions);
 }
 
 // Send order confirmation to customer
@@ -144,7 +161,7 @@ export async function sendCustomerConfirmation(order: Order): Promise<void> {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmailWithRetry(mailOptions);
 }
 
 // Send status update email to customer
@@ -213,5 +230,5 @@ export async function sendStatusUpdateEmail(order: Order): Promise<void> {
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  await sendEmailWithRetry(mailOptions);
 }

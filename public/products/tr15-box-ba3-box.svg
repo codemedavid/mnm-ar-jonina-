@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fce7f3"/>
+      <stop offset="100%" stop-color="#fdf2f8"/>
+    </linearGradient>
+    <linearGradient id="box1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fbcfe8"/>
+      <stop offset="100%" stop-color="#f9a8d4"/>
+    </linearGradient>
+    <linearGradient id="box1side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f472b6"/>
+      <stop offset="100%" stop-color="#ec4899"/>
+    </linearGradient>
+    <linearGradient id="box2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#bfdbfe"/>
+    </linearGradient>
+    <linearGradient id="box2side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="40" fill="url(#bg)"/>
+  <circle cx="75" cy="70" r="4" fill="#f9a8d4" opacity="0.6"/>
+  <circle cx="330" cy="90" r="3" fill="#f472b6" opacity="0.5"/>
+  <text x="60" y="115" font-size="16" opacity="0.4">&#x2728;</text>
+  <text x="320" y="185" font-size="14" opacity="0.35">&#x2728;</text>
+  <!-- BOX SET badge -->
+  <rect x="145" y="42" width="110" height="26" rx="13" fill="#ec4899" opacity="0.15"/>
+  <text x="200" y="60" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#db2777">BOX SET</text>
+  <!-- Pink box (TR15) - 3D isometric -->
+  <g transform="translate(70, 100)">
+    <!-- box top -->
+    <polygon points="80,15 170,0 240,30 150,45" fill="url(#box1)" stroke="#f472b6" stroke-width="1.5"/>
+    <!-- box front -->
+    <polygon points="80,15 80,115 150,145 150,45" fill="url(#box1side)" opacity="0.7" stroke="#ec4899" stroke-width="1.5"/>
+    <!-- box right side -->
+    <polygon points="150,45 150,145 240,130 240,30" fill="#f9a8d4" opacity="0.5" stroke="#f472b6" stroke-width="1.5"/>
+    <!-- label on front -->
+    <rect x="92" y="55" width="48" height="50" rx="5" fill="white" opacity="0.85"/>
+    <text x="116" y="75" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#db2777">TR15</text>
+    <text x="116" y="88" text-anchor="middle" font-family="sans-serif" font-size="7" fill="#9d7a9f">15mg</text>
+    <text x="116" y="99" text-anchor="middle" font-family="sans-serif" font-size="6" fill="#ec4899">x10 vials</text>
+    <!-- shine on top -->
+    <polygon points="90,17 130,10 140,13 100,20" fill="white" opacity="0.3"/>
+  </g>
+  <!-- Blue box (BA3) -->
+  <g transform="translate(190, 150)">
+    <!-- box top -->
+    <polygon points="50,12 120,0 170,22 100,34" fill="url(#box2)" stroke="#60a5fa" stroke-width="1.5"/>
+    <!-- box front -->
+    <polygon points="50,12 50,90 100,110 100,34" fill="url(#box2side)" opacity="0.6" stroke="#3b82f6" stroke-width="1.5"/>
+    <!-- box right -->
+    <polygon points="100,34 100,110 170,98 170,22" fill="#bfdbfe" opacity="0.5" stroke="#60a5fa" stroke-width="1.5"/>
+    <!-- label -->
+    <rect x="58" y="40" width="36" height="36" rx="4" fill="white" opacity="0.85"/>
+    <text x="76" y="56" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#1d4ed8">BA3</text>
+    <text x="76" y="68" text-anchor="middle" font-family="sans-serif" font-size="5" fill="#6b7280">x10 vials</text>
+    <polygon points="58,14 85,9 92,12 65,17" fill="white" opacity="0.3"/>
+  </g>
+  <text x="200" y="365" text-anchor="middle" font-size="22">&#x1F380;</text>
+</svg>

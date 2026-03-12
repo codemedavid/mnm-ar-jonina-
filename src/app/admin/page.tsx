@@ -407,6 +407,34 @@ function OrderCard({ order, isExpanded, onToggle, onUpdate }: {
                         {order.notes && <div><strong>📝</strong> {order.notes}</div>}
                     </div>
 
+                    {/* Proof of Payment */}
+                    {order.proofOfPayment && (
+                        <div style={{
+                            background: '#f0fdf4',
+                            border: '1px solid #bbf7d0',
+                            padding: '0.875rem',
+                            borderRadius: '0.5rem',
+                            marginBottom: '1rem',
+                            textAlign: 'center',
+                        }}>
+                            <div style={{ fontWeight: 600, fontSize: '0.8rem', color: '#166534', marginBottom: '0.5rem' }}>
+                                Proof of Payment
+                            </div>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={order.proofOfPayment}
+                                alt="Proof of payment"
+                                style={{
+                                    maxWidth: '250px',
+                                    width: '100%',
+                                    height: 'auto',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid #d1d5db',
+                                }}
+                            />
+                        </div>
+                    )}
+
                     {/* Items */}
                     <div style={{ marginBottom: '1rem' }}>
                         {order.items.map((item, i) => (
@@ -835,6 +863,7 @@ interface Product {
     price: number;
     image: string;
     category: string;
+    soldOut?: boolean;
 }
 
 function ProductsTab({ adminKey }: { adminKey: string }) {
@@ -892,6 +921,17 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
             });
             if (res.ok) setProducts((await res.json()).products);
         } catch { alert('Failed to delete'); }
+    };
+
+    const toggleSoldOut = async (p: Product) => {
+        try {
+            const res = await fetch(`/api/products?adminKey=${encodeURIComponent(adminKey)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: p.id, soldOut: !p.soldOut }),
+            });
+            if (res.ok) setProducts((await res.json()).products);
+        } catch { alert('Failed to update'); }
     };
 
     const startEdit = (p: Product) => {
@@ -1023,14 +1063,40 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{p.name}</div>
+                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {p.name}
+                                        {p.soldOut && (
+                                            <span style={{
+                                                background: '#ef4444',
+                                                color: 'white',
+                                                padding: '0.125rem 0.5rem',
+                                                borderRadius: '1rem',
+                                                fontSize: '0.625rem',
+                                                fontWeight: 700,
+                                                textTransform: 'uppercase',
+                                            }}>
+                                                Sold Out
+                                            </span>
+                                        )}
+                                    </div>
                                     <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>{p.description}</div>
                                     <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.875rem' }}>
                                         <span style={{ color: '#7c3aed', fontWeight: 600 }}>₱{p.price.toLocaleString()}</span>
                                         <span style={{ color: '#9ca3af' }}>{p.category}</span>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                    <button onClick={() => toggleSoldOut(p)} style={{
+                                        background: p.soldOut ? '#d1fae5' : '#fef3c7',
+                                        border: 'none',
+                                        color: p.soldOut ? '#059669' : '#d97706',
+                                        padding: '0.375rem 0.625rem',
+                                        borderRadius: '0.375rem',
+                                        cursor: 'pointer',
+                                        fontSize: '0.75rem',
+                                    }}>
+                                        {p.soldOut ? 'Mark In Stock' : 'Mark Sold Out'}
+                                    </button>
                                     <button onClick={() => startEdit(p)} style={{
                                         background: '#f3f4f6',
                                         border: 'none',

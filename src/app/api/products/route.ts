@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { name, description, price, image, category } = await request.json();
+        const { name, description, price, image, category, soldOut } = await request.json();
         if (!name || !price) {
             return NextResponse.json({ error: 'Name and price are required' }, { status: 400 });
         }
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
             price: Number(price),
             image: image || '/placeholder.svg',
             category: category || 'General',
+            soldOut: soldOut || false,
         };
 
         products.push(newProduct);
@@ -79,7 +80,7 @@ export async function PATCH(request: Request) {
     }
 
     try {
-        const { id, name, description, price, image, category } = await request.json();
+        const { id, name, description, price, image, category, soldOut } = await request.json();
         const products = await getProducts();
         const index = products.findIndex(p => p.id === id);
 
@@ -94,6 +95,7 @@ export async function PATCH(request: Request) {
             price: price !== undefined ? Number(price) : products[index].price,
             image: image || products[index].image,
             category: category || products[index].category,
+            soldOut: soldOut !== undefined ? soldOut : products[index].soldOut,
         };
 
         await saveProducts(products);

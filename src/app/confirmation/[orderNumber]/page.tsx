@@ -15,6 +15,12 @@ export default async function ConfirmationPage({
     const order = await getOrderByNumber(orderNumber);
     const payment = paymentMethods.find(p => p.id === order?.paymentMethod);
 
+    const buildWhatsAppUrl = (order: Order) => {
+        const orderItems = order.items.map(item => `${item.product.name} x${item.quantity}`).join(', ');
+        const message = `Hi! I placed order ${order.orderNumber}.\nItems: ${orderItems}\nTotal: PHP ${order.total.toLocaleString()}\nName: ${order.customer.fullName}\nContact: ${order.customer.contactNumber}\nAddress: ${order.customer.deliveryAddress}`;
+        return `https://api.whatsapp.com/send?phone=639058429200&text=${encodeURIComponent(message)}`;
+    };
+
     if (!order) {
         return (
             <>
@@ -22,7 +28,7 @@ export default async function ConfirmationPage({
                 <main className="page">
                     <div className="container">
                         <div className="empty-state">
-                            <div className="empty-icon">❌</div>
+                            <div className="empty-icon">✨</div>
                             <h2>Order Not Found</h2>
                             <p className="text-muted" style={{ marginBottom: '1.5rem' }}>
                                 We couldn&apos;t find an order with that number.
@@ -46,14 +52,16 @@ export default async function ConfirmationPage({
                     <div className="card">
                         <div className="confirmation-success">
                             <div className="success-icon">✓</div>
-                            <h1>Order Placed Successfully!</h1>
-                            <p className="text-muted">Thank you for your order. We&apos;ve received it and will process it shortly.</p>
+                            <h1 style={{ marginTop: '0.5rem' }}>Order Placed!</h1>
+                            <p className="text-muted" style={{ maxWidth: '400px', margin: '0 auto' }}>
+                                Thank you for your order. We&apos;ve received it and will process it shortly.
+                            </p>
 
                             <div className="order-number-display">
                                 {order.orderNumber}
                             </div>
 
-                            <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                                 Save this order number to track your order
                             </p>
                         </div>
@@ -63,7 +71,7 @@ export default async function ConfirmationPage({
                             {order.items.map((item, index) => (
                                 <div key={index} className="summary-row">
                                     <span>{item.product.name} × {item.quantity}</span>
-                                    <span>₱{(item.product.price * item.quantity).toLocaleString()}</span>
+                                    <span style={{ fontWeight: 600 }}>₱{(item.product.price * item.quantity).toLocaleString()}</span>
                                 </div>
                             ))}
                             <div className="summary-row summary-total">
@@ -77,16 +85,29 @@ export default async function ConfirmationPage({
                                 <strong>Payment Instructions ({payment.name}):</strong>
                                 <p style={{ marginTop: '0.5rem' }}>{payment.details}</p>
                                 {payment.id !== 'cod' && (
-                                    <p style={{ marginTop: '0.5rem', fontSize: '0.875rem' }}>
+                                    <p style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
                                         Please include your order number <strong>{order.orderNumber}</strong> in the payment reference/note.
                                     </p>
                                 )}
                             </div>
                         )}
 
-                        <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                        <div style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <a
+                                href={buildWhatsAppUrl(order)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn"
+                                style={{
+                                    background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                                    color: 'white',
+                                    boxShadow: '0 4px 16px rgba(37, 211, 102, 0.3)',
+                                }}
+                            >
+                                Send via WhatsApp
+                            </a>
                             <Link href="/track" className="btn btn-primary">
-                                Track Your Order
+                                Track Order
                             </Link>
                             <Link href="/" className="btn btn-secondary">
                                 Continue Shopping

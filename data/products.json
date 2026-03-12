@@ -1,18 +1,146 @@
 [
   {
-    "id": "tirz-20mg-vial",
-    "name": "Tirzepatide 20mg (vial only)",
-    "description": "Tirzepatide 20mg vial without bac water",
-    "price": 1600,
-    "image": "/placeholder.svg",
-    "category": "Vials Only"
+    "id": "tr15-ba3-vial",
+    "name": "TR15 + BA3 (Vial Only)",
+    "description": "Tirzepatide 15mg vial with BA3 bacteriostatic water",
+    "price": 1500,
+    "image": "/products/tr15-ba3-vial.svg",
+    "category": "Vials Only",
+    "soldOut": false
   },
   {
-    "id": "tirz-30mg-vial",
-    "name": "Tirzepatide 30mg (Vial Only)",
-    "description": "Tirzepatide 30mg vial without bacwater",
-    "price": 1800,
-    "image": "/placeholder.svg",
-    "category": "Vials Only"
+    "id": "tr20-ba3-vial",
+    "name": "TR20 + BA3 (Vial Only)",
+    "description": "Tirzepatide 20mg vial with BA3 bacteriostatic water",
+    "price": 1700,
+    "image": "/products/tr20-ba3-vial.svg",
+    "category": "Vials Only",
+    "soldOut": false
+  },
+  {
+    "id": "tr30-ba10-vial",
+    "name": "TR30 + BA10 (Vial Only)",
+    "description": "Tirzepatide 30mg vial with BA10 bacteriostatic water",
+    "price": 1900,
+    "image": "/products/tr30-ba10-vial.svg",
+    "category": "Vials Only",
+    "soldOut": false
+  },
+  {
+    "id": "ghk-cu50-ba10-vial",
+    "name": "GHK CU50 + BA10 (Vial Only)",
+    "description": "GHK CU50 vial with BA10 bacteriostatic water",
+    "price": 1100,
+    "image": "/products/ghk-cu50-ba10-vial.svg",
+    "category": "Vials Only",
+    "soldOut": false
+  },
+  {
+    "id": "lemon-bottle-china",
+    "name": "Lemon Bottle China (Vial Only)",
+    "description": "Lemon Bottle China vial",
+    "price": 1000,
+    "image": "/products/lemon-bottle-china.svg",
+    "category": "Vials Only",
+    "soldOut": false
+  },
+  {
+    "id": "aqualyx",
+    "name": "Aqualyx",
+    "description": "Aqualyx vial",
+    "price": 2500,
+    "image": "/products/aqualyx.svg",
+    "category": "Vials Only",
+    "soldOut": false
+  },
+  {
+    "id": "aqualyx-per-vial",
+    "name": "Aqualyx (Per Vial)",
+    "description": "Aqualyx single vial",
+    "price": 250,
+    "image": "/products/aqualyx-per-vial.svg",
+    "category": "Vials Only",
+    "soldOut": true
+  },
+  {
+    "id": "tr15-ba3-set",
+    "name": "TR15 + BA3 (Complete Set)",
+    "description": "Complete set includes vial, syringes, and accessories",
+    "price": 1700,
+    "image": "/products/tr15-ba3-set.svg",
+    "category": "Complete Sets",
+    "soldOut": false
+  },
+  {
+    "id": "tr20-ba3-set",
+    "name": "TR20 + BA3 (Complete Set)",
+    "description": "Complete set includes vial, syringes, and accessories",
+    "price": 1900,
+    "image": "/products/tr20-ba3-set.svg",
+    "category": "Complete Sets",
+    "soldOut": false
+  },
+  {
+    "id": "tr30-ba10-set",
+    "name": "TR30 + BA10 (Complete Set)",
+    "description": "Complete set includes vial, syringes, and accessories",
+    "price": 2100,
+    "image": "/products/tr30-ba10-set.svg",
+    "category": "Complete Sets",
+    "soldOut": false
+  },
+  {
+    "id": "ghk-cu50-ba10-set",
+    "name": "GHK CU50 + BA10 (Complete Set)",
+    "description": "Complete set includes vial, syringes, and accessories",
+    "price": 1300,
+    "image": "/products/ghk-cu50-ba10-set.svg",
+    "category": "Complete Sets",
+    "soldOut": false
+  },
+  {
+    "id": "lemon-bottle-china-set",
+    "name": "Lemon Bottle China (Complete Set)",
+    "description": "Complete set includes vial, syringes, and accessories",
+    "price": 1200,
+    "image": "/products/lemon-bottle-china-set.svg",
+    "category": "Complete Sets",
+    "soldOut": false
+  },
+  {
+    "id": "aqualyx-set",
+    "name": "Aqualyx (Complete Set)",
+    "description": "Complete set includes vial, syringes, and accessories",
+    "price": 2700,
+    "image": "/products/aqualyx-set.svg",
+    "category": "Complete Sets",
+    "soldOut": false
+  },
+  {
+    "id": "tr15-box-ba3-box",
+    "name": "TR15 Box + BA3 Box",
+    "description": "Full box of TR15 with BA3 box",
+    "price": 9500,
+    "image": "/products/tr15-box-ba3-box.svg",
+    "category": "Box Sets",
+    "soldOut": false
+  },
+  {
+    "id": "tr20-box-ba3-box",
+    "name": "TR20 Box + BA3 Box",
+    "description": "Full box of TR20 with BA3 box",
+    "price": 10500,
+    "image": "/products/tr20-box-ba3-box.svg",
+    "category": "Box Sets",
+    "soldOut": false
+  },
+  {
+    "id": "tr30-box-ba10-box",
+    "name": "TR30 Box + BA10 Box",
+    "description": "Full box of TR30 with BA10 box",
+    "price": 11500,
+    "image": "/products/tr30-box-ba10-box.svg",
+    "category": "Box Sets",
+    "soldOut": true
   }
 ]

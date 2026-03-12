@@ -7,6 +7,7 @@ export interface Product {
   price: number;
   image: string;
   category?: string;
+  soldOut?: boolean;
 }
 
 export interface CartItem {
@@ -32,6 +33,7 @@ export interface Order {
   trackingNumber?: string;
   courier?: string;
   paymentMethod: string;
+  proofOfPayment?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;

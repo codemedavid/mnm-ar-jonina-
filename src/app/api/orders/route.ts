@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createOrder, getOrders } from '@/lib/orders';
-import { sendAdminNotification, sendCustomerConfirmation } from '@/lib/email';
-import { products } from '@/lib/products';
 import { CartItem } from '@/lib/types';
 
 // GET /api/orders - List all orders (for admin)
@@ -29,7 +27,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, customer, paymentMethod, courier, total } = body;
+        const { items, customer, paymentMethod, proofOfPayment, courier, total } = body;
 
         // Validate required fields
         if (!items || !items.length) {
@@ -40,13 +38,18 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing customer information' }, { status: 400 });
         }
 
-        // Map items to full product data
-        const orderItems: CartItem[] = items.map((item: { productId: string; quantity: number }) => {
-            const product = products.find(p => p.id === item.productId);
-            if (!product) {
-                throw new Error(`Product not found: ${item.productId}`);
-            }
-            return { product, quantity: item.quantity };
+        // Map items to cart item format using data sent from client
+        const orderItems: CartItem[] = items.map((item: { productId: string; productName: string; price: number; quantity: number }) => {
+            return {
+                product: {
+                    id: item.productId,
+                    name: item.productName,
+                    price: item.price,
+                    description: '',
+                    image: '',
+                },
+                quantity: item.quantity,
+            };
         });
 
         // Create order
@@ -54,15 +57,10 @@ export async function POST(request: Request) {
             items: orderItems,
             customer,
             paymentMethod,
+            proofOfPayment: proofOfPayment || '',
             courier: courier || '',
             total,
         });
-
-        // Send email notifications (don't block response)
-        Promise.all([
-            sendAdminNotification(order).catch(err => console.error('Admin email error:', err)),
-            sendCustomerConfirmation(order).catch(err => console.error('Customer email error:', err)),
-        ]);
 
         return NextResponse.json({
             success: true,

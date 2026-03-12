@@ -21,7 +21,20 @@ export async function getOrders(): Promise<Order[]> {
         return [];
     }
 
-    return data || [];
+    return (data || []).map((row: any) => ({
+        orderNumber: row.order_number,
+        items: row.items,
+        customer: row.customer,
+        total: row.total,
+        status: row.status,
+        paymentMethod: row.payment_method,
+        proofOfPayment: row.proof_of_payment,
+        courier: row.courier,
+        trackingNumber: row.tracking_number,
+        notes: row.notes,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+    })) as Order[];
 }
 
 // Get order by order number
@@ -51,6 +64,7 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
         total: data.total,
         status: data.status,
         paymentMethod: data.payment_method,
+        proofOfPayment: data.proof_of_payment,
         courier: data.courier,
         trackingNumber: data.tracking_number,
         notes: data.notes,
@@ -69,6 +83,7 @@ export async function createOrder(orderData: Omit<Order, 'orderNumber' | 'status
         total: orderData.total,
         status: 'pending',
         payment_method: orderData.paymentMethod,
+        proof_of_payment: orderData.proofOfPayment || null,
         courier: orderData.courier || null,
         notes: orderData.notes || null,
         // created_at and updated_at are handled by default/DB
@@ -92,6 +107,7 @@ export async function createOrder(orderData: Omit<Order, 'orderNumber' | 'status
         total: data.total,
         status: data.status,
         paymentMethod: data.payment_method,
+        proofOfPayment: data.proof_of_payment,
         courier: data.courier,
         trackingNumber: data.tracking_number,
         notes: data.notes,
@@ -128,6 +144,7 @@ export async function updateOrder(orderNumber: string, updates: Partial<Order>):
         total: data.total,
         status: data.status,
         paymentMethod: data.payment_method,
+        proofOfPayment: data.proof_of_payment,
         courier: data.courier,
         trackingNumber: data.tracking_number,
         notes: data.notes,

@@ -22,6 +22,8 @@ export default function CheckoutPage() {
     const [couriers, setCouriers] = useState<string[]>([]);
     const [selectedPayment, setSelectedPayment] = useState('');
     const [selectedCourier, setSelectedCourier] = useState('');
+    const [proofOfPayment, setProofOfPayment] = useState('');
+    const [uploading, setUploading] = useState(false);
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -31,7 +33,6 @@ export default function CheckoutPage() {
         notes: '',
     });
 
-    // Fetch couriers and payment methods on mount
     useEffect(() => {
         fetch('/api/couriers')
             .then(r => r.json())
@@ -51,11 +52,43 @@ export default function CheckoutPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setProofOfPayment(data.url);
+            } else {
+                alert(data.error || 'Upload failed');
+            }
+        } catch {
+            alert('Upload failed. Please try again.');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (items.length === 0) {
             alert('Your cart is empty');
+            return;
+        }
+
+        if (!proofOfPayment) {
+            alert('Please upload your proof of payment');
             return;
         }
 
@@ -74,6 +107,7 @@ export default function CheckoutPage() {
                     })),
                     customer: formData,
                     paymentMethod: selectedPayment,
+                    proofOfPayment,
                     courier: selectedCourier,
                     total,
                 }),
@@ -101,9 +135,9 @@ export default function CheckoutPage() {
                 <main className="page">
                     <div className="container">
                         <div className="empty-state">
-                            <div className="empty-icon">🛒</div>
+                            <div className="empty-icon">✨</div>
                             <h2>Your cart is empty</h2>
-                            <p className="text-muted">Add some items to your cart before checking out</p>
+                            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Add some items to your cart before checking out</p>
                             <Link href="/" className="btn btn-primary">
                                 Browse Products
                             </Link>
@@ -122,13 +156,24 @@ export default function CheckoutPage() {
             <Header />
             <main className="page">
                 <div className="container">
-                    <h1 style={{ marginBottom: '2rem' }}>Checkout</h1>
+                    <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+                        <p style={{
+                            fontSize: '0.75rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.2em',
+                            color: 'var(--color-primary)',
+                            fontWeight: 600,
+                            marginBottom: '0.75rem',
+                        }}>
+                            Almost There
+                        </p>
+                        <h1>Checkout</h1>
+                    </div>
 
                     <form onSubmit={handleSubmit}>
                         <div style={{ display: 'grid', gap: '2rem' }}>
-                            {/* Left Column - Forms */}
                             <div>
-                                <div className="card">
+                                <div className="card" style={{ marginBottom: '1.5rem' }}>
                                     <h3 style={{ marginBottom: '1.5rem' }}>Customer Details</h3>
 
                                     <div className="form-group">
@@ -232,16 +277,16 @@ export default function CheckoutPage() {
                                         ))}
                                     </div>
 
-                                    {/* QR Code Display */}
                                     {selectedPaymentMethod && selectedPaymentMethod.qrCode && (
                                         <div style={{
                                             marginTop: '1.5rem',
-                                            padding: '1rem',
-                                            background: 'var(--color-bg-elevated)',
-                                            borderRadius: '0.75rem',
-                                            textAlign: 'center'
+                                            padding: '1.5rem',
+                                            background: 'linear-gradient(135deg, rgba(252, 231, 243, 0.5), rgba(233, 213, 255, 0.3))',
+                                            borderRadius: 'var(--radius-lg)',
+                                            textAlign: 'center',
+                                            border: '1px solid rgba(243, 209, 231, 0.5)',
                                         }}>
-                                            <p style={{ marginBottom: '1rem', fontWeight: 600, color: 'var(--color-primary)' }}>
+                                            <p style={{ marginBottom: '1rem', fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.9rem' }}>
                                                 Scan to Pay via {selectedPaymentMethod.name}
                                             </p>
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -252,24 +297,101 @@ export default function CheckoutPage() {
                                                     maxWidth: '200px',
                                                     width: '100%',
                                                     height: 'auto',
-                                                    borderRadius: '0.5rem',
-                                                    border: '2px solid var(--color-border)'
+                                                    borderRadius: 'var(--radius-md)',
+                                                    border: '2px solid var(--color-border)',
+                                                    margin: '0 auto',
                                                 }}
                                                 onError={(e) => {
                                                     (e.target as HTMLImageElement).style.display = 'none';
                                                 }}
                                             />
-                                            <p style={{ marginTop: '0.75rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                                            <p style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
                                                 Please include your name as payment reference
                                             </p>
                                         </div>
                                     )}
+
+                                    <div style={{
+                                        marginTop: '1.5rem',
+                                        padding: '1.5rem',
+                                        background: 'linear-gradient(135deg, rgba(252, 231, 243, 0.4), rgba(254, 243, 199, 0.3))',
+                                        borderRadius: 'var(--radius-lg)',
+                                        border: '1px solid rgba(243, 209, 231, 0.6)',
+                                    }}>
+                                        <p style={{ fontWeight: 700, marginBottom: '0.5rem', color: 'var(--color-primary)', fontSize: '0.9rem' }}>
+                                            Upload Proof of Payment *
+                                        </p>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '1rem' }}>
+                                            Please upload a screenshot of your payment receipt
+                                        </p>
+
+                                        {proofOfPayment ? (
+                                            <div style={{ textAlign: 'center' }}>
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={proofOfPayment}
+                                                    alt="Proof of payment"
+                                                    style={{
+                                                        maxWidth: '200px',
+                                                        width: '100%',
+                                                        height: 'auto',
+                                                        borderRadius: 'var(--radius-md)',
+                                                        border: '2px solid var(--color-border)',
+                                                        marginBottom: '0.75rem',
+                                                    }}
+                                                />
+                                                <div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setProofOfPayment('')}
+                                                        style={{
+                                                            background: 'rgba(239, 68, 68, 0.08)',
+                                                            color: '#ef4444',
+                                                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                                                            padding: '0.5rem 1.25rem',
+                                                            borderRadius: '9999px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        Remove & Re-upload
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                padding: '2rem',
+                                                border: '2px dashed var(--color-border)',
+                                                borderRadius: 'var(--radius-lg)',
+                                                cursor: uploading ? 'wait' : 'pointer',
+                                                background: 'rgba(255, 255, 255, 0.7)',
+                                                transition: 'all 0.2s ease',
+                                            }}>
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleProofUpload}
+                                                    disabled={uploading}
+                                                    style={{ display: 'none' }}
+                                                />
+                                                <span style={{ fontSize: '2.5rem', marginBottom: '0.75rem', opacity: 0.5 }}>
+                                                    {uploading ? '...' : '+'}
+                                                </span>
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                                                    {uploading ? 'Uploading...' : 'Tap to upload screenshot'}
+                                                </span>
+                                            </label>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Right Column - Order Summary */}
                             <div>
-                                <div className="card order-summary-card">
+                                <div className="card" style={{ position: 'sticky', top: '5rem' }}>
                                     <h3 style={{ marginBottom: '1.5rem' }}>Order Summary</h3>
 
                                     <div className="order-summary">
@@ -277,9 +399,9 @@ export default function CheckoutPage() {
                                             <div key={item.product.id} className="summary-row">
                                                 <span>
                                                     {item.product.name}
-                                                    <span className="text-muted"> × {item.quantity}</span>
+                                                    <span className="text-muted" style={{ fontSize: '0.85rem' }}> × {item.quantity}</span>
                                                 </span>
-                                                <span>₱{(item.product.price * item.quantity).toLocaleString()}</span>
+                                                <span style={{ fontWeight: 600 }}>₱{(item.product.price * item.quantity).toLocaleString()}</span>
                                             </div>
                                         ))}
 
@@ -291,14 +413,14 @@ export default function CheckoutPage() {
 
                                     <button
                                         type="submit"
-                                        className="btn btn-primary btn-block"
+                                        className="btn btn-primary btn-block btn-lg"
                                         disabled={isSubmitting}
                                         style={{ marginTop: '1.5rem' }}
                                     >
                                         {isSubmitting ? 'Placing Order...' : 'Place Order'}
                                     </button>
 
-                                    <p className="text-muted" style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.875rem' }}>
+                                    <p className="text-muted" style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.75rem' }}>
                                         By placing your order, you agree to our terms and conditions
                                     </p>
                                 </div>
