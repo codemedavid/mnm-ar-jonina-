@@ -1,15 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { CartItem, Product } from '@/lib/types';
+import { CartItem } from '@/lib/types';
 
 interface CartContextType {
     items: CartItem[];
-    addItem: (product: Product, quantity?: number) => void;
-    removeItem: (productId: string) => void;
-    updateQuantity: (productId: string, quantity: number) => void;
+    addItem: (cartProduct: CartItem['product'], quantity?: number) => void;
+    removeItem: (variationId: string) => void;
+    updateQuantity: (variationId: string, quantity: number) => void;
     clearCart: () => void;
-    getQuantity: (productId: string) => number;
+    getQuantity: (variationId: string) => number;
+    getStockUsedByProduct: (productId: string) => number;
     total: number;
     itemCount: number;
 }
@@ -36,32 +37,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('cart', JSON.stringify(items));
     }, [items]);
 
-    const addItem = (product: Product, quantity = 1) => {
+    // Clear cart when location changes
+    useEffect(() => {
+        const handler = () => setItems([]);
+        window.addEventListener('location-changed', handler);
+        return () => window.removeEventListener('location-changed', handler);
+    }, []);
+
+    const addItem = (cartProduct: CartItem['product'], quantity = 1) => {
         setItems(prev => {
-            const existing = prev.find(item => item.product.id === product.id);
+            const existing = prev.find(item => item.product.variationId === cartProduct.variationId);
             if (existing) {
                 return prev.map(item =>
-                    item.product.id === product.id
+                    item.product.variationId === cartProduct.variationId
                         ? { ...item, quantity: item.quantity + quantity }
                         : item
                 );
             }
-            return [...prev, { product, quantity }];
+            return [...prev, { product: cartProduct, quantity }];
         });
     };
 
-    const removeItem = (productId: string) => {
-        setItems(prev => prev.filter(item => item.product.id !== productId));
+    const removeItem = (variationId: string) => {
+        setItems(prev => prev.filter(item => item.product.variationId !== variationId));
     };
 
-    const updateQuantity = (productId: string, quantity: number) => {
+    const updateQuantity = (variationId: string, quantity: number) => {
         if (quantity <= 0) {
-            removeItem(productId);
+            removeItem(variationId);
             return;
         }
         setItems(prev =>
             prev.map(item =>
-                item.product.id === productId ? { ...item, quantity } : item
+                item.product.variationId === variationId ? { ...item, quantity } : item
             )
         );
     };
@@ -70,9 +78,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([]);
     };
 
-    const getQuantity = (productId: string): number => {
-        const item = items.find(item => item.product.id === productId);
+    const getQuantity = (variationId: string): number => {
+        const item = items.find(item => item.product.variationId === variationId);
         return item?.quantity || 0;
+    };
+
+    // Total stock units consumed by all variations of a product in cart
+    const getStockUsedByProduct = (productId: string): number => {
+        return items
+            .filter(item => item.product.id === productId)
+            .reduce((sum, item) => sum + item.quantity * item.product.unitsRequired, 0);
     };
 
     const total = items.reduce(
@@ -91,6 +106,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 updateQuantity,
                 clearCart,
                 getQuantity,
+                getStockUsedByProduct,
                 total,
                 itemCount,
             }}

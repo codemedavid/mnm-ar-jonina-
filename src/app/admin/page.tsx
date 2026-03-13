@@ -407,6 +407,7 @@ function OrderCard({ order, isExpanded, onToggle, onUpdate }: {
                         <div><strong>📧</strong> {order.customer.email}</div>
                         <div><strong>📱</strong> {order.customer.contactNumber}</div>
                         <div><strong>📍</strong> {order.customer.deliveryAddress}</div>
+                        <div><strong>🏪</strong> {order.location === 'lucena' ? 'Lucena' : order.location === 'laguna' ? 'Laguna' : 'Bacoor Molino'}</div>
                         {order.courier && <div><strong>🚚</strong> {order.courier}</div>}
                         {order.notes && <div><strong>📝</strong> {order.notes}</div>}
                     </div>
@@ -860,15 +861,27 @@ function PaymentsTab({ adminKey }: { adminKey: string }) {
 }
 
 // ==================== PRODUCTS TAB ====================
+interface ProductVariation {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    unitsRequired: number;
+}
+
 interface Product {
     id: string;
     name: string;
     description: string;
-    price: number;
+    stock: { bacoor: number; lucena: number; laguna: number };
+    variations: ProductVariation[];
+}
+
+interface VariationForm {
+    name: string;
+    price: string;
     image: string;
-    category: string;
-    soldOut?: boolean;
-    stock?: number;
+    unitsRequired: string;
 }
 
 function ProductsTab({ adminKey }: { adminKey: string }) {
@@ -876,7 +889,8 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState({ name: '', description: '', price: '', image: '', category: '', stock: '' });
+    const [form, setForm] = useState({ name: '', description: '', stockBacoor: '', stockLucena: '', stockLaguna: '' });
+    const [variationForms, setVariationForms] = useState<VariationForm[]>([{ name: '', price: '', image: '', unitsRequired: '1' }]);
 
     useEffect(() => { fetchProducts(); }, []);
 
@@ -891,15 +905,34 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
     };
 
     const saveProduct = async () => {
-        if (!form.name.trim() || !form.price) {
-            alert('Name and price are required');
+        if (!form.name.trim()) {
+            alert('Product name is required');
             return;
         }
+        const validVariations = variationForms.filter(v => v.name.trim() && v.price);
+        if (validVariations.length === 0) {
+            alert('At least one variation with name and price is required');
+            return;
+        }
+
         const url = `/api/products?adminKey=${encodeURIComponent(adminKey)}`;
         const method = editingId ? 'PATCH' : 'POST';
-        const body = editingId
-            ? { id: editingId, ...form, price: Number(form.price), stock: form.stock !== '' ? Number(form.stock) : undefined }
-            : { ...form, price: Number(form.price), stock: form.stock !== '' ? Number(form.stock) : 0 };
+        const body = {
+            ...(editingId ? { id: editingId } : {}),
+            name: form.name,
+            description: form.description,
+            stock: {
+                bacoor: form.stockBacoor !== '' ? Number(form.stockBacoor) : 0,
+                lucena: form.stockLucena !== '' ? Number(form.stockLucena) : 0,
+                laguna: form.stockLaguna !== '' ? Number(form.stockLaguna) : 0,
+            },
+            variations: validVariations.map(v => ({
+                name: v.name,
+                price: Number(v.price),
+                image: v.image || '/placeholder.svg',
+                unitsRequired: v.unitsRequired !== '' ? Number(v.unitsRequired) : 1,
+            })),
+        };
 
         try {
             const res = await fetch(url, {
@@ -911,13 +944,14 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                 setProducts((await res.json()).products);
                 resetForm();
             } else {
-                alert((await res.json()).error);
+                const err = await res.json();
+                alert(err.error);
             }
         } catch { alert('Failed to save'); }
     };
 
     const deleteProduct = async (id: string) => {
-        if (!confirm('Delete this product?')) return;
+        if (!confirm('Delete this product and all its variations?')) return;
         try {
             const res = await fetch(`/api/products?adminKey=${encodeURIComponent(adminKey)}`, {
                 method: 'DELETE',
@@ -928,39 +962,40 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
         } catch { alert('Failed to delete'); }
     };
 
-    const toggleSoldOut = async (p: Product) => {
-        try {
-            const res = await fetch(`/api/products?adminKey=${encodeURIComponent(adminKey)}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: p.id, soldOut: !p.soldOut }),
-            });
-            if (res.ok) setProducts((await res.json()).products);
-        } catch { alert('Failed to update'); }
-    };
-
     const startEdit = (p: Product) => {
         setEditingId(p.id);
-        setForm({
-            name: p.name,
-            description: p.description,
-            price: String(p.price),
-            image: p.image,
-            category: p.category,
-            stock: p.stock !== undefined ? String(p.stock) : '',
-        });
+        setForm({ name: p.name, description: p.description, stockBacoor: String(p.stock.bacoor), stockLucena: String(p.stock.lucena), stockLaguna: String(p.stock.laguna) });
+        setVariationForms(p.variations.map(v => ({
+            name: v.name,
+            price: String(v.price),
+            image: v.image,
+            unitsRequired: String(v.unitsRequired ?? 1),
+        })));
         setShowForm(true);
     };
 
     const resetForm = () => {
-        setForm({ name: '', description: '', price: '', image: '', category: '', stock: '' });
+        setForm({ name: '', description: '', stockBacoor: '', stockLucena: '', stockLaguna: '' });
+        setVariationForms([{ name: '', price: '', image: '', unitsRequired: '1' }]);
         setEditingId(null);
         setShowForm(false);
     };
 
+    const addVariation = () => {
+        setVariationForms([...variationForms, { name: '', price: '', image: '', unitsRequired: '1' }]);
+    };
+
+    const removeVariation = (index: number) => {
+        if (variationForms.length <= 1) return;
+        setVariationForms(variationForms.filter((_, i) => i !== index));
+    };
+
+    const updateVariation = (index: number, field: keyof VariationForm, value: string) => {
+        setVariationForms(variationForms.map((v, i) => i === index ? { ...v, [field]: value } : v));
+    };
+
     return (
         <>
-            {/* Add/Edit Form */}
             {showForm ? (
                 <div style={{
                     background: 'white',
@@ -987,81 +1022,121 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                             rows={2}
                             style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', resize: 'vertical' }}
                         />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginTop: '0.25rem' }}>
+                            Stock per Location
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
                             <input
                                 type="number"
-                                placeholder="Price (₱) *"
-                                value={form.price}
-                                onChange={e => setForm({ ...form, price: e.target.value })}
+                                placeholder="Bacoor Molino"
+                                value={form.stockBacoor}
+                                onChange={e => setForm({ ...form, stockBacoor: e.target.value })}
+                                min="0"
                                 style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
                             />
                             <input
                                 type="number"
-                                placeholder="Stock quantity"
-                                value={form.stock}
-                                onChange={e => setForm({ ...form, stock: e.target.value })}
+                                placeholder="Lucena"
+                                value={form.stockLucena}
+                                onChange={e => setForm({ ...form, stockLucena: e.target.value })}
+                                min="0"
+                                style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                            />
+                            <input
+                                type="number"
+                                placeholder="Laguna"
+                                value={form.stockLaguna}
+                                onChange={e => setForm({ ...form, stockLaguna: e.target.value })}
                                 min="0"
                                 style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
                             />
                         </div>
-                        <input
-                            type="text"
-                            placeholder="Category (e.g., Vials Only)"
-                            value={form.category}
-                            onChange={e => setForm({ ...form, category: e.target.value })}
-                            style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
-                        />
-                        <ImageUpload
-                            value={form.image}
-                            onChange={(url) => setForm({ ...form, image: url })}
-                        />
+
+                        <div style={{ fontWeight: 600, fontSize: '0.875rem', color: '#374151', marginTop: '0.5rem' }}>
+                            Variations
+                        </div>
+                        {variationForms.map((v, i) => (
+                            <div key={i} style={{
+                                background: '#f9fafb',
+                                padding: '0.75rem',
+                                borderRadius: '0.5rem',
+                                border: '1px solid #e5e7eb',
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6b7280' }}>Variation {i + 1}</span>
+                                    {variationForms.length > 1 && (
+                                        <button onClick={() => removeVariation(i)} style={{
+                                            background: '#fef2f2', border: 'none', color: '#ef4444',
+                                            padding: '0.25rem 0.5rem', borderRadius: '0.25rem', cursor: 'pointer', fontSize: '0.7rem',
+                                        }}>Remove</button>
+                                    )}
+                                </div>
+                                <div style={{ display: 'grid', gap: '0.5rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Variation name (e.g., Vial Only) *"
+                                        value={v.name}
+                                        onChange={e => updateVariation(i, 'name', e.target.value)}
+                                        style={{ padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                    />
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                        <input
+                                            type="number"
+                                            placeholder="Price (₱) *"
+                                            value={v.price}
+                                            onChange={e => updateVariation(i, 'price', e.target.value)}
+                                            style={{ padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Units per order (default 1)"
+                                            value={v.unitsRequired}
+                                            onChange={e => updateVariation(i, 'unitsRequired', e.target.value)}
+                                            min="1"
+                                            style={{ padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                        />
+                                    </div>
+                                    <ImageUpload
+                                        value={v.image}
+                                        onChange={(url) => updateVariation(i, 'image', url)}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                        <button onClick={addVariation} style={{
+                            padding: '0.625rem',
+                            background: '#f5f3ff',
+                            color: '#7c3aed',
+                            border: '1px dashed #c4b5fd',
+                            borderRadius: '0.5rem',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                        }}>
+                            + Add Variation
+                        </button>
+
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button onClick={saveProduct} style={{
-                                flex: 1,
-                                padding: '0.75rem',
-                                background: '#7c3aed',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '0.5rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                            }}>
-                                Save
-                            </button>
+                                flex: 1, padding: '0.75rem', background: '#7c3aed', color: 'white',
+                                border: 'none', borderRadius: '0.5rem', fontWeight: 600, cursor: 'pointer',
+                            }}>Save</button>
                             <button onClick={resetForm} style={{
-                                padding: '0.75rem 1rem',
-                                background: '#f3f4f6',
-                                color: '#6b7280',
-                                border: 'none',
-                                borderRadius: '0.5rem',
-                                cursor: 'pointer',
-                            }}>
-                                Cancel
-                            </button>
+                                padding: '0.75rem 1rem', background: '#f3f4f6', color: '#6b7280',
+                                border: 'none', borderRadius: '0.5rem', cursor: 'pointer',
+                            }}>Cancel</button>
                         </div>
                     </div>
                 </div>
             ) : (
                 <button onClick={() => setShowForm(true)} style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    background: '#7c3aed',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.5rem',
-                    fontWeight: 600,
-                    marginBottom: '1rem',
-                    cursor: 'pointer',
-                }}>
-                    + Add Product
-                </button>
+                    width: '100%', padding: '0.875rem', background: '#7c3aed', color: 'white',
+                    border: 'none', borderRadius: '0.5rem', fontWeight: 600, marginBottom: '1rem', cursor: 'pointer',
+                }}>+ Add Product</button>
             )}
 
-            {/* List */}
             <div style={{
-                background: 'white',
-                borderRadius: '0.75rem',
-                overflow: 'hidden',
+                background: 'white', borderRadius: '0.75rem', overflow: 'hidden',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
             }}>
                 <div style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6', fontWeight: 600, color: '#1f2937' }}>
@@ -1081,65 +1156,59 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                                 <div style={{ flex: 1 }}>
                                     <div style={{ fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                         {p.name}
-                                        {p.soldOut && (
-                                            <span style={{
-                                                background: '#ef4444',
-                                                color: 'white',
-                                                padding: '0.125rem 0.5rem',
-                                                borderRadius: '1rem',
-                                                fontSize: '0.625rem',
-                                                fontWeight: 700,
-                                                textTransform: 'uppercase',
-                                            }}>
-                                                Sold Out
-                                            </span>
-                                        )}
+                                        {(['bacoor', 'lucena', 'laguna'] as const).map(loc => {
+                                            const s = p.stock[loc] ?? 0;
+                                            const label = loc === 'bacoor' ? 'B' : loc === 'lucena' ? 'L' : 'Lag';
+                                            return (
+                                                <span key={loc} style={{
+                                                    background: s <= 0 ? '#fef2f2' : s <= 5 ? '#fffbeb' : '#f0fdf4',
+                                                    color: s <= 0 ? '#ef4444' : s <= 5 ? '#f59e0b' : '#10b981',
+                                                    padding: '0.125rem 0.5rem',
+                                                    borderRadius: '1rem',
+                                                    fontSize: '0.65rem',
+                                                    fontWeight: 700,
+                                                }}>
+                                                    {label}: {s <= 0 ? 'Out' : s}
+                                                </span>
+                                            );
+                                        })}
                                     </div>
-                                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>{p.description}</div>
-                                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.875rem', flexWrap: 'wrap' }}>
-                                        <span style={{ color: '#7c3aed', fontWeight: 600 }}>₱{p.price.toLocaleString()}</span>
-                                        <span style={{ color: '#9ca3af' }}>{p.category}</span>
-                                        <span style={{
-                                            color: (p.stock ?? 0) <= 5 ? '#ef4444' : '#10b981',
-                                            fontWeight: 600,
-                                        }}>
-                                            Stock: {p.stock ?? 0}
-                                        </span>
+                                    <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.5rem' }}>{p.description}</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                        {p.variations.map(v => {
+                                            const totalStock = p.stock.bacoor + p.stock.lucena + p.stock.laguna;
+                                            const available = totalStock >= Math.max(1, v.unitsRequired || 1);
+                                            return (
+                                                <div key={v.id} style={{
+                                                    display: 'flex', gap: '0.75rem', fontSize: '0.8rem', alignItems: 'center',
+                                                    padding: '0.25rem 0.5rem',
+                                                    background: !available ? '#fef2f2' : '#f9fafb',
+                                                    borderRadius: '0.25rem',
+                                                }}>
+                                                    <span style={{ fontWeight: 500, minWidth: '100px' }}>{v.name}</span>
+                                                    <span style={{ color: '#7c3aed', fontWeight: 600 }}>₱{v.price.toLocaleString()}</span>
+                                                    <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                                                        {v.unitsRequired > 1 ? `${v.unitsRequired} units/order` : '1 unit/order'}
+                                                    </span>
+                                                    {!available && (
+                                                        <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '0.7rem' }}>
+                                                            Need {v.unitsRequired}+ stock
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                                    <button onClick={() => toggleSoldOut(p)} style={{
-                                        background: p.soldOut ? '#d1fae5' : '#fef3c7',
-                                        border: 'none',
-                                        color: p.soldOut ? '#059669' : '#d97706',
-                                        padding: '0.375rem 0.625rem',
-                                        borderRadius: '0.375rem',
-                                        cursor: 'pointer',
-                                        fontSize: '0.75rem',
-                                    }}>
-                                        {p.soldOut ? 'Mark In Stock' : 'Mark Sold Out'}
-                                    </button>
                                     <button onClick={() => startEdit(p)} style={{
-                                        background: '#f3f4f6',
-                                        border: 'none',
-                                        padding: '0.375rem 0.625rem',
-                                        borderRadius: '0.375rem',
-                                        cursor: 'pointer',
-                                        fontSize: '0.75rem',
-                                    }}>
-                                        Edit
-                                    </button>
+                                        background: '#f3f4f6', border: 'none', padding: '0.375rem 0.625rem',
+                                        borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.75rem',
+                                    }}>Edit</button>
                                     <button onClick={() => deleteProduct(p.id)} style={{
-                                        background: '#fef2f2',
-                                        border: 'none',
-                                        color: '#ef4444',
-                                        padding: '0.375rem 0.625rem',
-                                        borderRadius: '0.375rem',
-                                        cursor: 'pointer',
-                                        fontSize: '0.75rem',
-                                    }}>
-                                        Delete
-                                    </button>
+                                        background: '#fef2f2', border: 'none', color: '#ef4444',
+                                        padding: '0.375rem 0.625rem', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.75rem',
+                                    }}>Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -1151,9 +1220,13 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
 }
 
 // ==================== INVENTORY TAB ====================
+type LocationKey = 'bacoor' | 'lucena' | 'laguna';
+const LOCATION_LABELS: Record<LocationKey, string> = { bacoor: 'Bacoor Molino', lucena: 'Lucena', laguna: 'Laguna' };
+
 function InventoryTab({ adminKey }: { adminKey: string }) {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedLocation, setSelectedLocation] = useState<LocationKey>('bacoor');
     const [filter, setFilter] = useState<'all' | 'low' | 'out'>('all');
     const [adjustingId, setAdjustingId] = useState<string | null>(null);
     const [adjustValue, setAdjustValue] = useState('');
@@ -1170,12 +1243,17 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
         }
     };
 
+    const getLocStock = (p: Product) => p.stock[selectedLocation] ?? 0;
+
     const updateStock = async (id: string, newStock: number) => {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        const updatedStock = { ...product.stock, [selectedLocation]: Math.max(0, newStock) };
         try {
             const res = await fetch(`/api/products?adminKey=${encodeURIComponent(adminKey)}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, stock: Math.max(0, newStock) }),
+                body: JSON.stringify({ id, stock: updatedStock }),
             });
             if (res.ok) {
                 setProducts((await res.json()).products);
@@ -1185,19 +1263,14 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
         } catch { alert('Failed to update stock'); }
     };
 
-    const quickAdjust = async (id: string, delta: number) => {
-        const product = products.find(p => p.id === id);
-        if (!product) return;
-        const newStock = Math.max(0, (product.stock ?? 0) + delta);
-        await updateStock(id, newStock);
+    const quickAdjust = async (p: Product, delta: number) => {
+        await updateStock(p.id, Math.max(0, getLocStock(p) + delta));
     };
 
-    const lowStockProducts = products.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 5);
-    const outOfStockProducts = products.filter(p => (p.stock ?? 0) <= 0 || p.soldOut);
-    const inStockProducts = products.filter(p => (p.stock ?? 0) > 5 && !p.soldOut);
+    const lowStockProducts = products.filter(p => { const s = getLocStock(p); return s > 0 && s <= 5; });
+    const outOfStockProducts = products.filter(p => getLocStock(p) <= 0);
 
-    const totalStock = products.reduce((sum, p) => sum + (p.stock ?? 0), 0);
-    const totalValue = products.reduce((sum, p) => sum + (p.stock ?? 0) * p.price, 0);
+    const totalStock = products.reduce((sum, p) => sum + getLocStock(p), 0);
 
     const filteredProducts = filter === 'low'
         ? lowStockProducts
@@ -1205,146 +1278,93 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
             ? outOfStockProducts
             : products;
 
-    const getStockColor = (stock: number, soldOut?: boolean) => {
-        if (soldOut || stock <= 0) return '#ef4444';
+    const getStockColor = (stock: number) => {
+        if (stock <= 0) return '#ef4444';
         if (stock <= 5) return '#f59e0b';
         return '#10b981';
     };
 
-    const getStockBg = (stock: number, soldOut?: boolean) => {
-        if (soldOut || stock <= 0) return '#fef2f2';
+    const getStockBg = (stock: number) => {
+        if (stock <= 0) return '#fef2f2';
         if (stock <= 5) return '#fffbeb';
         return '#f0fdf4';
     };
 
     return (
         <>
-            {/* Summary Cards */}
+            {/* Location Selector */}
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                {(['bacoor', 'lucena', 'laguna'] as LocationKey[]).map(loc => (
+                    <button key={loc} onClick={() => { setSelectedLocation(loc); setFilter('all'); }} style={{
+                        flex: 1, padding: '0.75rem', borderRadius: '0.5rem', border: 'none',
+                        background: selectedLocation === loc ? '#7c3aed' : 'white',
+                        color: selectedLocation === loc ? 'white' : '#6b7280',
+                        fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    }}>{LOCATION_LABELS[loc]}</button>
+                ))}
+            </div>
+
             <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: '0.75rem',
-                marginBottom: '1rem',
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '1rem',
             }}>
-                <div style={{
-                    background: 'white',
-                    padding: '1rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    textAlign: 'center',
-                }}>
+                <div style={{ background: 'white', padding: '1rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7c3aed' }}>{totalStock}</div>
                     <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Units</div>
                 </div>
-                <div style={{
-                    background: 'white',
-                    padding: '1rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    textAlign: 'center',
-                }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7c3aed' }}>₱{totalValue.toLocaleString()}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Value</div>
-                </div>
-                <div style={{
-                    background: 'white',
-                    padding: '1rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    textAlign: 'center',
-                }}>
+                <div style={{ background: 'white', padding: '1rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>{lowStockProducts.length}</div>
                     <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Low Stock</div>
                 </div>
-                <div style={{
-                    background: 'white',
-                    padding: '1rem',
-                    borderRadius: '0.75rem',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                    textAlign: 'center',
-                }}>
+                <div style={{ background: 'white', padding: '1rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>{outOfStockProducts.length}</div>
                     <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Out of Stock</div>
                 </div>
             </div>
 
-            {/* Low Stock Alert */}
             {lowStockProducts.length > 0 && (
                 <div style={{
-                    background: '#fffbeb',
-                    border: '1px solid #fde68a',
-                    padding: '0.875rem',
-                    borderRadius: '0.75rem',
-                    marginBottom: '1rem',
-                    fontSize: '0.875rem',
+                    background: '#fffbeb', border: '1px solid #fde68a', padding: '0.875rem',
+                    borderRadius: '0.75rem', marginBottom: '1rem', fontSize: '0.875rem',
                 }}>
-                    <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '0.5rem' }}>
-                        ⚠️ Low Stock Alert
-                    </div>
+                    <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '0.5rem' }}>Low Stock Alert — {LOCATION_LABELS[selectedLocation]}</div>
                     {lowStockProducts.map(p => (
                         <div key={p.id} style={{ color: '#92400e', padding: '0.125rem 0' }}>
-                            {p.name} — <strong>{p.stock} left</strong>
+                            {p.name} — <strong>{getLocStock(p)} left</strong>
                         </div>
                     ))}
                 </div>
             )}
 
-            {/* Filter Pills */}
-            <div style={{
-                display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '1rem',
-            }}>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 {[
                     { id: 'all' as const, label: `All (${products.length})` },
                     { id: 'low' as const, label: `Low Stock (${lowStockProducts.length})` },
                     { id: 'out' as const, label: `Out of Stock (${outOfStockProducts.length})` },
                 ].map(f => (
-                    <button
-                        key={f.id}
-                        onClick={() => setFilter(f.id)}
-                        style={{
-                            padding: '0.5rem 0.75rem',
-                            borderRadius: '2rem',
-                            border: 'none',
-                            background: filter === f.id ? '#7c3aed' : 'white',
-                            color: filter === f.id ? 'white' : '#6b7280',
-                            fontSize: '0.75rem',
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                        }}
-                    >
-                        {f.label}
-                    </button>
+                    <button key={f.id} onClick={() => setFilter(f.id)} style={{
+                        padding: '0.5rem 0.75rem', borderRadius: '2rem', border: 'none',
+                        background: filter === f.id ? '#7c3aed' : 'white',
+                        color: filter === f.id ? 'white' : '#6b7280',
+                        fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    }}>{f.label}</button>
                 ))}
             </div>
 
-            {/* Refresh */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
                 <button onClick={fetchProducts} style={{
-                    background: 'white',
-                    border: '1px solid #e5e7eb',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    cursor: 'pointer',
-                    color: '#6b7280',
-                }}>
-                    {loading ? '...' : '↻ Refresh'}
-                </button>
+                    background: 'white', border: '1px solid #e5e7eb', padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', color: '#6b7280',
+                }}>{loading ? '...' : 'Refresh'}</button>
             </div>
 
-            {/* Inventory List */}
             <div style={{
-                background: 'white',
-                borderRadius: '0.75rem',
-                overflow: 'hidden',
+                background: 'white', borderRadius: '0.75rem', overflow: 'hidden',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
             }}>
                 <div style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6', fontWeight: 600, color: '#1f2937' }}>
-                    Inventory ({filteredProducts.length} items)
+                    Inventory — {LOCATION_LABELS[selectedLocation]} ({filteredProducts.length} products)
                 </div>
                 {loading ? (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading...</div>
@@ -1352,9 +1372,8 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No products found</div>
                 ) : (
                     filteredProducts.map((p, i) => {
-                        const stock = p.stock ?? 0;
                         const isAdjusting = adjustingId === p.id;
-
+                        const locStock = getLocStock(p);
                         return (
                             <div key={p.id} style={{
                                 padding: '0.875rem 1rem',
@@ -1365,154 +1384,55 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
                                         <div style={{ fontWeight: 600, fontSize: '0.9375rem', marginBottom: '0.125rem' }}>
                                             {p.name}
                                         </div>
-                                        <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                                            {p.category} • ₱{p.price.toLocaleString()}
+                                        <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                                            {p.variations.map(v => `${v.name} (${v.unitsRequired}u)`).join(' · ')}
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        {/* Stock Badge */}
                                         <div style={{
-                                            background: getStockBg(stock, p.soldOut),
-                                            color: getStockColor(stock, p.soldOut),
-                                            padding: '0.375rem 0.75rem',
-                                            borderRadius: '2rem',
-                                            fontWeight: 700,
-                                            fontSize: '0.875rem',
-                                            minWidth: '3rem',
-                                            textAlign: 'center',
-                                        }}>
-                                            {stock}
-                                        </div>
-                                        {/* Quick Buttons */}
+                                            background: getStockBg(locStock),
+                                            color: getStockColor(locStock),
+                                            padding: '0.375rem 0.75rem', borderRadius: '2rem',
+                                            fontWeight: 700, fontSize: '0.875rem', minWidth: '3rem', textAlign: 'center',
+                                        }}>{locStock}</div>
                                         <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                            <button
-                                                onClick={() => quickAdjust(p.id, -1)}
-                                                disabled={stock <= 0}
-                                                style={{
-                                                    width: '2rem',
-                                                    height: '2rem',
-                                                    borderRadius: '0.375rem',
-                                                    border: '1px solid #e5e7eb',
-                                                    background: 'white',
-                                                    cursor: stock <= 0 ? 'not-allowed' : 'pointer',
-                                                    fontWeight: 700,
-                                                    fontSize: '1rem',
-                                                    color: stock <= 0 ? '#d1d5db' : '#6b7280',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                }}
-                                            >−</button>
-                                            <button
-                                                onClick={() => quickAdjust(p.id, 1)}
-                                                style={{
-                                                    width: '2rem',
-                                                    height: '2rem',
-                                                    borderRadius: '0.375rem',
-                                                    border: '1px solid #e5e7eb',
-                                                    background: 'white',
-                                                    cursor: 'pointer',
-                                                    fontWeight: 700,
-                                                    fontSize: '1rem',
-                                                    color: '#6b7280',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                }}
-                                            >+</button>
+                                            <button onClick={() => quickAdjust(p, -1)} disabled={locStock <= 0} style={{
+                                                width: '2rem', height: '2rem', borderRadius: '0.375rem',
+                                                border: '1px solid #e5e7eb', background: 'white',
+                                                cursor: locStock <= 0 ? 'not-allowed' : 'pointer',
+                                                fontWeight: 700, fontSize: '1rem',
+                                                color: locStock <= 0 ? '#d1d5db' : '#6b7280',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>-</button>
+                                            <button onClick={() => quickAdjust(p, 1)} style={{
+                                                width: '2rem', height: '2rem', borderRadius: '0.375rem',
+                                                border: '1px solid #e5e7eb', background: 'white', cursor: 'pointer',
+                                                fontWeight: 700, fontSize: '1rem', color: '#6b7280',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>+</button>
                                         </div>
-                                        {/* Set Button */}
-                                        <button
-                                            onClick={() => {
-                                                if (isAdjusting) {
-                                                    setAdjustingId(null);
-                                                    setAdjustValue('');
-                                                } else {
-                                                    setAdjustingId(p.id);
-                                                    setAdjustValue(String(stock));
-                                                }
-                                            }}
-                                            style={{
-                                                background: isAdjusting ? '#7c3aed' : '#f3f4f6',
-                                                border: 'none',
-                                                color: isAdjusting ? 'white' : '#6b7280',
-                                                padding: '0.375rem 0.5rem',
-                                                borderRadius: '0.375rem',
-                                                cursor: 'pointer',
-                                                fontSize: '0.75rem',
-                                                fontWeight: 500,
-                                            }}
-                                        >
-                                            Set
-                                        </button>
+                                        <button onClick={() => {
+                                            if (isAdjusting) { setAdjustingId(null); setAdjustValue(''); }
+                                            else { setAdjustingId(p.id); setAdjustValue(String(locStock)); }
+                                        }} style={{
+                                            background: isAdjusting ? '#7c3aed' : '#f3f4f6', border: 'none',
+                                            color: isAdjusting ? 'white' : '#6b7280',
+                                            padding: '0.375rem 0.5rem', borderRadius: '0.375rem',
+                                            cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500,
+                                        }}>Set</button>
                                     </div>
                                 </div>
-
-                                {/* Set Stock Input */}
                                 {isAdjusting && (
-                                    <div style={{
-                                        display: 'flex',
-                                        gap: '0.5rem',
-                                        background: '#f5f3ff',
-                                        padding: '0.75rem',
-                                        borderRadius: '0.5rem',
-                                    }}>
-                                        <input
-                                            type="number"
-                                            value={adjustValue}
-                                            onChange={e => setAdjustValue(e.target.value)}
-                                            min="0"
-                                            placeholder="New stock"
-                                            autoFocus
-                                            style={{
-                                                flex: 1,
-                                                padding: '0.5rem 0.75rem',
-                                                border: '1px solid #e5e7eb',
-                                                borderRadius: '0.375rem',
-                                                fontSize: '0.875rem',
-                                            }}
-                                            onKeyDown={e => {
-                                                if (e.key === 'Enter' && adjustValue !== '') {
-                                                    updateStock(p.id, Number(adjustValue));
-                                                }
-                                            }}
+                                    <div style={{ display: 'flex', gap: '0.5rem', background: '#f5f3ff', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                                        <input type="number" value={adjustValue} onChange={e => setAdjustValue(e.target.value)}
+                                            min="0" placeholder="New stock" autoFocus
+                                            style={{ flex: 1, padding: '0.5rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                                            onKeyDown={e => { if (e.key === 'Enter' && adjustValue !== '') updateStock(p.id, Number(adjustValue)); }}
                                         />
-                                        <button
-                                            onClick={() => {
-                                                if (adjustValue !== '') {
-                                                    updateStock(p.id, Number(adjustValue));
-                                                }
-                                            }}
-                                            style={{
-                                                padding: '0.5rem 1rem',
-                                                background: '#7c3aed',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '0.375rem',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                fontSize: '0.875rem',
-                                            }}
-                                        >
-                                            Save
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setAdjustingId(null);
-                                                setAdjustValue('');
-                                            }}
-                                            style={{
-                                                padding: '0.5rem 0.75rem',
-                                                background: '#f3f4f6',
-                                                color: '#6b7280',
-                                                border: 'none',
-                                                borderRadius: '0.375rem',
-                                                cursor: 'pointer',
-                                                fontSize: '0.875rem',
-                                            }}
-                                        >
-                                            Cancel
-                                        </button>
+                                        <button onClick={() => { if (adjustValue !== '') updateStock(p.id, Number(adjustValue)); }}
+                                            style={{ padding: '0.5rem 1rem', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '0.375rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem' }}>Save</button>
+                                        <button onClick={() => { setAdjustingId(null); setAdjustValue(''); }}
+                                            style={{ padding: '0.5rem 0.75rem', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem' }}>Cancel</button>
                                     </div>
                                 )}
                             </div>

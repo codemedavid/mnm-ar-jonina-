@@ -1,18 +1,39 @@
 // Core types for the ordering system
 
+export interface ProductVariation {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  unitsRequired: number; // 1 for vial/set, 10 for box/kit
+}
+
+export type LocationId = 'bacoor' | 'lucena' | 'laguna';
+
+export const LOCATIONS: { id: LocationId; name: string }[] = [
+  { id: 'bacoor', name: 'Bacoor Molino' },
+  { id: 'lucena', name: 'Lucena' },
+  { id: 'laguna', name: 'Laguna' },
+];
+
 export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
-  image: string;
-  category?: string;
-  soldOut?: boolean;
-  stock?: number;
+  stock: Record<LocationId, number>; // stock per location
+  variations: ProductVariation[];
 }
 
 export interface CartItem {
-  product: Product;
+  product: {
+    id: string;        // parent product id
+    name: string;      // parent product name
+    variationId: string;
+    variationName: string;
+    price: number;
+    image: string;
+    unitsRequired: number;
+  };
   quantity: number;
 }
 
@@ -31,6 +52,7 @@ export interface Order {
   customer: CustomerInfo;
   total: number;
   status: OrderStatus;
+  location: LocationId;
   trackingNumber?: string;
   courier?: string;
   paymentMethod: string;

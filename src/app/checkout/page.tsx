@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import { useLocation } from '@/context/LocationContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -17,6 +18,7 @@ interface PaymentMethod {
 export default function CheckoutPage() {
     const router = useRouter();
     const { items, total, clearCart, itemCount } = useCart();
+    const { location, locationName } = useLocation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [couriers, setCouriers] = useState<string[]>([]);
@@ -101,11 +103,13 @@ export default function CheckoutPage() {
                 body: JSON.stringify({
                     items: items.map(item => ({
                         productId: item.product.id,
-                        productName: item.product.name,
+                        variationId: item.product.variationId,
+                        productName: `${item.product.name} (${item.product.variationName})`,
                         price: item.product.price,
                         quantity: item.quantity,
                     })),
                     customer: formData,
+                    location,
                     paymentMethod: selectedPayment,
                     proofOfPayment,
                     courier: selectedCourier,
@@ -394,12 +398,26 @@ export default function CheckoutPage() {
                                 <div className="card" style={{ position: 'sticky', top: '5rem' }}>
                                     <h3 style={{ marginBottom: '1.5rem' }}>Order Summary</h3>
 
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(236, 72, 153, 0.03))',
+                                        border: '1px solid rgba(236, 72, 153, 0.2)',
+                                        borderRadius: '9999px',
+                                        padding: '0.5rem 1rem',
+                                        marginBottom: '1rem',
+                                        textAlign: 'center',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        color: 'var(--color-primary)',
+                                    }}>
+                                        Shipping from: {locationName}
+                                    </div>
+
                                     <div className="order-summary">
                                         {items.map(item => (
-                                            <div key={item.product.id} className="summary-row">
+                                            <div key={item.product.variationId} className="summary-row">
                                                 <span>
                                                     {item.product.name}
-                                                    <span className="text-muted" style={{ fontSize: '0.85rem' }}> × {item.quantity}</span>
+                                                    <span className="text-muted" style={{ fontSize: '0.8rem', display: 'block' }}>{item.product.variationName} × {item.quantity}</span>
                                                 </span>
                                                 <span style={{ fontWeight: 600 }}>₱{(item.product.price * item.quantity).toLocaleString()}</span>
                                             </div>

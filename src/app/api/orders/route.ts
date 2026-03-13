@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { items, customer, paymentMethod, proofOfPayment, courier, total } = body;
+        const { items, customer, location, paymentMethod, proofOfPayment, courier, total } = body;
 
         // Validate required fields
         if (!items || !items.length) {
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
         const order = await createOrder({
             items: orderItems,
             customer,
+            location: location || 'bacoor',
             paymentMethod,
             proofOfPayment: proofOfPayment || '',
             courier: courier || '',

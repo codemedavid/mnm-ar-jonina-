@@ -31,7 +31,7 @@ async function sendEmailWithRetry(mailOptions: nodemailer.SendMailOptions, retri
 // Format order items for email
 function formatOrderItems(order: Order): string {
   return order.items
-    .map(item => `• ${item.product.name} × ${item.quantity} = ₱${(item.product.price * item.quantity).toLocaleString()}`)
+    .map(item => `• ${item.product.name}${item.product.variationName ? ` (${item.product.variationName})` : ''} × ${item.quantity} = ₱${(item.product.price * item.quantity).toLocaleString()}`)
     .join('\n');
 }
 
@@ -58,6 +58,7 @@ export async function sendAdminNotification(order: Order): Promise<void> {
           <li><strong>Email:</strong> ${order.customer.email}</li>
           <li><strong>Phone:</strong> ${order.customer.contactNumber}</li>
           <li><strong>Address:</strong> ${order.customer.deliveryAddress}</li>
+          <li><strong>Location:</strong> ${order.location === 'lucena' ? 'Lucena' : order.location === 'laguna' ? 'Laguna' : 'Bacoor Molino'}</li>
         </ul>
 
         <h3>Order Items</h3>
@@ -72,7 +73,7 @@ export async function sendAdminNotification(order: Order): Promise<void> {
           <tbody>
             ${order.items.map(item => `
               <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 10px;">${item.product.name}</td>
+                <td style="padding: 10px;">${item.product.name}${item.product.variationName ? `<br><small style="color:#6b7280">${item.product.variationName}</small>` : ''}</td>
                 <td style="padding: 10px; text-align: center;">${item.quantity}</td>
                 <td style="padding: 10px; text-align: right;">₱${(item.product.price * item.quantity).toLocaleString()}</td>
               </tr>
@@ -125,7 +126,7 @@ export async function sendCustomerConfirmation(order: Order): Promise<void> {
         <table style="width: 100%; border-collapse: collapse;">
           ${order.items.map(item => `
             <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 10px;">${item.product.name} × ${item.quantity}</td>
+              <td style="padding: 10px;">${item.product.name}${item.product.variationName ? ` (${item.product.variationName})` : ''} × ${item.quantity}</td>
               <td style="padding: 10px; text-align: right;">₱${(item.product.price * item.quantity).toLocaleString()}</td>
             </tr>
           `).join('')}

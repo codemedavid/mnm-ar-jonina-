@@ -153,7 +153,12 @@ export default function TrackingPage() {
                                 <h3 style={{ marginBottom: '1rem' }}>Order Details</h3>
                                 {order.items.map((item, index) => (
                                     <div key={index} className="summary-row">
-                                        <span>{item.product.name} × {item.quantity}</span>
+                                        <span>
+                                            {item.product.name}
+                                            {item.product.variationName && (
+                                                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'block' }}>{item.product.variationName} × {item.quantity}</span>
+                                            )}
+                                        </span>
                                         <span style={{ fontWeight: 600 }}>₱{(item.product.price * item.quantity).toLocaleString()}</span>
                                     </div>
                                 ))}
@@ -161,6 +166,11 @@ export default function TrackingPage() {
                                     <span>Total</span>
                                     <span>₱{order.total.toLocaleString()}</span>
                                 </div>
+                            </div>
+
+                            <div style={{ marginTop: '1.5rem' }}>
+                                <h4 style={{ marginBottom: '0.5rem' }}>Shipping From</h4>
+                                <p className="text-muted">{order.location === 'lucena' ? 'Lucena' : order.location === 'laguna' ? 'Laguna' : 'Bacoor Molino'}</p>
                             </div>
 
                             <div style={{ marginTop: '1.5rem' }}>

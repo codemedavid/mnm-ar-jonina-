@@ -15,9 +15,11 @@ export default async function ConfirmationPage({
     const order = await getOrderByNumber(orderNumber);
     const payment = paymentMethods.find(p => p.id === order?.paymentMethod);
 
+    const locationName = order?.location === 'lucena' ? 'Lucena' : 'Bacoor Molino';
+
     const buildWhatsAppUrl = (order: Order) => {
-        const orderItems = order.items.map(item => `${item.product.name} x${item.quantity}`).join(', ');
-        const message = `Hi! I placed order ${order.orderNumber}.\nItems: ${orderItems}\nTotal: PHP ${order.total.toLocaleString()}\nName: ${order.customer.fullName}\nContact: ${order.customer.contactNumber}\nAddress: ${order.customer.deliveryAddress}`;
+        const orderItems = order.items.map(item => `${item.product.name}${item.product.variationName ? ` (${item.product.variationName})` : ''} x${item.quantity}`).join(', ');
+        const message = `Hi! I placed order ${order.orderNumber}.\nItems: ${orderItems}\nTotal: PHP ${order.total.toLocaleString()}\nLocation: ${order.location === 'lucena' ? 'Lucena' : order.location === 'laguna' ? 'Laguna' : 'Bacoor Molino'}\nName: ${order.customer.fullName}\nContact: ${order.customer.contactNumber}\nAddress: ${order.customer.deliveryAddress}`;
         return `https://api.whatsapp.com/send?phone=639058429200&text=${encodeURIComponent(message)}`;
     };
 
@@ -66,11 +68,30 @@ export default async function ConfirmationPage({
                             </p>
                         </div>
 
+                        <div style={{
+                            display: 'inline-block',
+                            background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.08), rgba(236, 72, 153, 0.03))',
+                            border: '1px solid rgba(236, 72, 153, 0.2)',
+                            borderRadius: '9999px',
+                            padding: '0.4rem 1rem',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            color: 'var(--color-primary)',
+                            marginTop: '0.5rem',
+                        }}>
+                            Shipping from: {locationName}
+                        </div>
+
                         <div className="order-summary" style={{ marginTop: '2rem' }}>
                             <h3 style={{ marginBottom: '1rem' }}>Order Summary</h3>
                             {order.items.map((item, index) => (
                                 <div key={index} className="summary-row">
-                                    <span>{item.product.name} × {item.quantity}</span>
+                                    <span>
+                                        {item.product.name}
+                                        {item.product.variationName && (
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'block' }}>{item.product.variationName} × {item.quantity}</span>
+                                        )}
+                                    </span>
                                     <span style={{ fontWeight: 600 }}>₱{(item.product.price * item.quantity).toLocaleString()}</span>
                                 </div>
                             ))}

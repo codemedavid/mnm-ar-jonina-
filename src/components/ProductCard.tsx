@@ -1,7 +1,8 @@
 'use client';
 
-import { Product } from '@/lib/types';
+import { Product, ProductVariation } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
+import { useLocation } from '@/context/LocationContext';
 import { useState } from 'react';
 
 interface ProductCardProps {
@@ -9,33 +10,72 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-    const { getQuantity, updateQuantity, addItem } = useCart();
-    const quantity = getQuantity(product.id);
+    const { getQuantity, updateQuantity, addItem, getStockUsedByProduct } = useCart();
+    const { location } = useLocation();
+
+    const locationStock = product.stock[location] ?? 0;
+
+    const [selectedIndex, setSelectedIndex] = useState(() => {
+        const available = product.variations.findIndex(v => locationStock >= Math.max(1, v.unitsRequired || 1));
+        return available >= 0 ? available : 0;
+    });
     const [imgError, setImgError] = useState(false);
 
-    const stock = product.stock ?? 999;
-    const isOutOfStock = product.soldOut === true || stock <= 0;
-    const isLowStock = !isOutOfStock && stock > 0 && stock <= 5;
+    const variation = product.variations[selectedIndex];
+    const totalStock = locationStock;
+    const stockUsed = getStockUsedByProduct(product.id);
+    const remainingStock = totalStock - stockUsed;
+
+    const unitsReq = Math.max(1, variation.unitsRequired || 1);
+    const isOutOfStock = totalStock <= 0 || remainingStock < unitsReq;
+    const currentQty = getQuantity(variation.id);
+    const unitsUsedByThis = currentQty * unitsReq;
+    const stockAvailableForThis = remainingStock + unitsUsedByThis;
+    const maxQty = Math.floor(stockAvailableForThis / unitsReq);
+
+    const isLowStock = !isOutOfStock && totalStock > 0 && totalStock <= 5;
+
+    const cartProduct = {
+        id: product.id,
+        name: product.name,
+        variationId: variation.id,
+        variationName: variation.name,
+        price: variation.price,
+        image: variation.image,
+        unitsRequired: unitsReq,
+    };
 
     const handleIncrement = () => {
-        if (quantity >= stock) return;
-        if (quantity === 0) {
-            addItem(product, 1);
+        if (currentQty >= maxQty) return;
+        if (currentQty === 0) {
+            addItem(cartProduct, 1);
         } else {
-            updateQuantity(product.id, quantity + 1);
+            updateQuantity(variation.id, currentQty + 1);
         }
     };
 
     const handleDecrement = () => {
-        updateQuantity(product.id, quantity - 1);
+        updateQuantity(variation.id, currentQty - 1);
     };
 
-    // Use placeholder if image fails or not set
-    const imageSrc = imgError ? '/placeholder.svg' : product.image;
+    const handleVariationChange = (index: number) => {
+        setSelectedIndex(index);
+        setImgError(false);
+    };
+
+    const isVariationAvailable = (v: ProductVariation) => {
+        const vUnits = Math.max(1, v.unitsRequired || 1);
+        const usedByOthers = stockUsed - getQuantity(v.id) * vUnits;
+        return (totalStock - usedByOthers) >= vUnits;
+    };
+
+    const imageSrc = imgError ? '/placeholder.svg' : variation.image;
+
+    const isProductOutOfStock = totalStock <= 0;
 
     return (
-        <div className="card product-card" style={{ opacity: isOutOfStock ? 0.55 : 1, position: 'relative' }}>
-            {isOutOfStock && (
+        <div className="card product-card" style={{ opacity: isProductOutOfStock ? 0.55 : 1, position: 'relative' }}>
+            {isProductOutOfStock && (
                 <div style={{
                     position: 'absolute',
                     top: '1rem',
@@ -70,14 +110,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                     letterSpacing: '0.08em',
                     boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
                 }}>
-                    Only {stock} left
+                    Only {totalStock} left
                 </div>
             )}
             <div className="product-image">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={imageSrc}
-                    alt={product.name}
+                    alt={`${product.name} - ${variation.name}`}
                     style={{
                         width: '100%',
                         height: '100%',
@@ -91,9 +131,54 @@ export default function ProductCard({ product }: ProductCardProps) {
             </div>
             <h3 className="product-name">{product.name}</h3>
             <p className="product-description">{product.description}</p>
-            <div className="product-price">₱{product.price.toLocaleString()}</div>
 
-            {isOutOfStock ? (
+            {/* Variation Selector */}
+            <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '0.4rem',
+                margin: '0.75rem 0',
+            }}>
+                {product.variations.map((v: ProductVariation, i: number) => {
+                    const vAvailable = isVariationAvailable(v);
+                    const vNotEnoughStock = totalStock < Math.max(1, v.unitsRequired || 1);
+                    const isSelected = i === selectedIndex;
+                    return (
+                        <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => handleVariationChange(i)}
+                            style={{
+                                padding: '0.35rem 0.75rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.72rem',
+                                fontWeight: isSelected ? 700 : 500,
+                                border: isSelected
+                                    ? '2px solid var(--color-primary)'
+                                    : '1.5px solid var(--color-border)',
+                                background: isSelected
+                                    ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(236, 72, 153, 0.05))'
+                                    : 'transparent',
+                                color: (vNotEnoughStock || (!vAvailable && !isSelected))
+                                    ? '#a8a29e'
+                                    : isSelected
+                                        ? 'var(--color-primary)'
+                                        : 'var(--color-text)',
+                                cursor: 'pointer',
+                                textDecoration: vNotEnoughStock ? 'line-through' : 'none',
+                                opacity: vNotEnoughStock && !isSelected ? 0.6 : 1,
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            {v.name}
+                        </button>
+                    );
+                })}
+            </div>
+
+            <div className="product-price">&#8369;{variation.price.toLocaleString()}</div>
+
+            {isProductOutOfStock || isOutOfStock ? (
                 <button className="btn btn-block" disabled style={{
                     background: 'rgba(0,0,0,0.06)',
                     color: '#a8a29e',
@@ -105,21 +190,21 @@ export default function ProductCard({ product }: ProductCardProps) {
                     letterSpacing: '0.05em',
                     fontSize: '0.875rem',
                 }}>
-                    Sold Out
+                    {isProductOutOfStock ? 'Sold Out' : 'Not Enough Stock'}
                 </button>
-            ) : quantity === 0 ? (
+            ) : currentQty === 0 ? (
                 <button className="btn btn-primary btn-block" onClick={handleIncrement}>
                     Add to Order
                 </button>
             ) : (
                 <div className="quantity-selector">
-                    <button className="quantity-btn" onClick={handleDecrement}>−</button>
-                    <span className="quantity-value">{quantity}</span>
+                    <button className="quantity-btn" onClick={handleDecrement}>&#8722;</button>
+                    <span className="quantity-value">{currentQty}</span>
                     <button
                         className="quantity-btn"
                         onClick={handleIncrement}
-                        disabled={quantity >= stock}
-                        style={quantity >= stock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                        disabled={currentQty >= maxQty}
+                        style={currentQty >= maxQty ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                     >+</button>
                 </div>
             )}

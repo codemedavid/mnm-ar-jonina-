@@ -34,15 +34,15 @@ export async function POST(request: Request) {
     }
 
     try {
-        const { name, description, price, image, category, soldOut, stock } = await request.json();
-        if (!name || !price) {
-            return NextResponse.json({ error: 'Name and price are required' }, { status: 400 });
+        const body = await request.json();
+        const { name, description, stock, variations } = body;
+        if (!name || !variations || variations.length === 0) {
+            return NextResponse.json({ error: 'Name and at least one variation are required' }, { status: 400 });
         }
 
         const products = await getProducts();
         const id = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
 
-        // Check for duplicate ID
         let finalId = id;
         let counter = 1;
         while (products.find(p => p.id === finalId)) {
@@ -50,16 +50,27 @@ export async function POST(request: Request) {
             counter++;
         }
 
-        const stockValue = stock !== undefined ? Number(stock) : 0;
+        // Handle stock: accept either { bacoor: N, lucena: N } or a single number (defaults both to that number)
+        let stockObj: Record<string, number>;
+        if (typeof stock === 'object' && stock !== null) {
+            stockObj = { bacoor: Number(stock.bacoor) || 0, lucena: Number(stock.lucena) || 0, laguna: Number(stock.laguna) || 0 };
+        } else {
+            const stockNum = stock !== undefined ? Number(stock) : 0;
+            stockObj = { bacoor: stockNum, lucena: 0, laguna: 0 };
+        }
+
         const newProduct: Product = {
             id: finalId,
             name,
             description: description || '',
-            price: Number(price),
-            image: image || '/placeholder.svg',
-            category: category || 'General',
-            soldOut: stockValue === 0 ? true : (soldOut || false),
-            stock: stockValue,
+            stock: stockObj as Product['stock'],
+            variations: variations.map((v: { id?: string; name: string; price: number; image?: string; unitsRequired?: number }) => ({
+                id: v.id || `${finalId}-${v.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')}`,
+                name: v.name,
+                price: Number(v.price),
+                image: v.image || '/placeholder.svg',
+                unitsRequired: v.unitsRequired ?? 1,
+            })),
         };
 
         products.push(newProduct);
@@ -82,7 +93,8 @@ export async function PATCH(request: Request) {
     }
 
     try {
-        const { id, name, description, price, image, category, soldOut, stock } = await request.json();
+        const body = await request.json();
+        const { id, name, description, stock, variations } = body;
         const products = await getProducts();
         const index = products.findIndex(p => p.id === id);
 
@@ -90,18 +102,27 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
 
-        const updatedStock = stock !== undefined ? Number(stock) : products[index].stock;
-        const autoSoldOut = updatedStock !== undefined && updatedStock <= 0;
+        // Handle stock update: accept object or number
+        let stockObj = products[index].stock;
+        if (stock !== undefined) {
+            if (typeof stock === 'object' && stock !== null) {
+                stockObj = {
+                    bacoor: stock.bacoor !== undefined ? Number(stock.bacoor) : stockObj.bacoor,
+                    lucena: stock.lucena !== undefined ? Number(stock.lucena) : stockObj.lucena,
+                    laguna: stock.laguna !== undefined ? Number(stock.laguna) : stockObj.laguna,
+                } as Product['stock'];
+            } else {
+                const stockNum = Number(stock);
+                stockObj = { bacoor: stockNum, lucena: stockNum, laguna: stockNum } as Product['stock'];
+            }
+        }
 
         products[index] = {
             ...products[index],
             name: name || products[index].name,
             description: description !== undefined ? description : products[index].description,
-            price: price !== undefined ? Number(price) : products[index].price,
-            image: image || products[index].image,
-            category: category || products[index].category,
-            soldOut: autoSoldOut ? true : (soldOut !== undefined ? soldOut : products[index].soldOut),
-            stock: updatedStock,
+            stock: stockObj,
+            variations: variations || products[index].variations,
         };
 
         await saveProducts(products);
