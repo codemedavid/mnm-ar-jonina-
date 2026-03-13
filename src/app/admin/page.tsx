@@ -6,7 +6,7 @@ import { Order, OrderStatus } from '@/lib/types';
 import { BUSINESS_INFO } from '@/lib/products';
 import ImageUpload from '@/components/admin/ImageUpload';
 
-type Tab = 'orders' | 'products' | 'couriers' | 'payments';
+type Tab = 'orders' | 'products' | 'inventory' | 'couriers' | 'payments';
 
 interface PaymentMethod {
     id: string;
@@ -116,6 +116,7 @@ export default function AdminDashboard() {
     const tabs = [
         { id: 'orders' as Tab, label: 'Orders', icon: '📦' },
         { id: 'products' as Tab, label: 'Products', icon: '🏷️' },
+        { id: 'inventory' as Tab, label: 'Inventory', icon: '📊' },
         { id: 'couriers' as Tab, label: 'Couriers', icon: '🚚' },
         { id: 'payments' as Tab, label: 'Payments', icon: '💳' },
     ];
@@ -152,6 +153,7 @@ export default function AdminDashboard() {
                 display: 'flex',
                 background: 'white',
                 borderBottom: '1px solid #e5e7eb',
+                overflowX: 'auto',
             }}>
                 {tabs.map(tab => (
                     <button
@@ -159,15 +161,16 @@ export default function AdminDashboard() {
                         onClick={() => setActiveTab(tab.id)}
                         style={{
                             flex: 1,
-                            padding: '1rem',
+                            padding: '1rem 0.5rem',
                             border: 'none',
                             background: activeTab === tab.id ? '#f5f3ff' : 'white',
                             borderBottom: activeTab === tab.id ? '3px solid #7c3aed' : '3px solid transparent',
                             color: activeTab === tab.id ? '#7c3aed' : '#6b7280',
                             fontWeight: 600,
-                            fontSize: '0.875rem',
+                            fontSize: '0.8rem',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
+                            whiteSpace: 'nowrap',
                         }}
                     >
                         {tab.icon} {tab.label}
@@ -179,6 +182,7 @@ export default function AdminDashboard() {
             <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
                 {activeTab === 'orders' && <OrdersTab adminKey={adminKey} />}
                 {activeTab === 'products' && <ProductsTab adminKey={adminKey} />}
+                {activeTab === 'inventory' && <InventoryTab adminKey={adminKey} />}
                 {activeTab === 'couriers' && <CouriersTab adminKey={adminKey} />}
                 {activeTab === 'payments' && <PaymentsTab adminKey={adminKey} />}
             </div>
@@ -864,6 +868,7 @@ interface Product {
     image: string;
     category: string;
     soldOut?: boolean;
+    stock?: number;
 }
 
 function ProductsTab({ adminKey }: { adminKey: string }) {
@@ -871,7 +876,7 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [form, setForm] = useState({ name: '', description: '', price: '', image: '', category: '' });
+    const [form, setForm] = useState({ name: '', description: '', price: '', image: '', category: '', stock: '' });
 
     useEffect(() => { fetchProducts(); }, []);
 
@@ -893,8 +898,8 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
         const url = `/api/products?adminKey=${encodeURIComponent(adminKey)}`;
         const method = editingId ? 'PATCH' : 'POST';
         const body = editingId
-            ? { id: editingId, ...form, price: Number(form.price) }
-            : { ...form, price: Number(form.price) };
+            ? { id: editingId, ...form, price: Number(form.price), stock: form.stock !== '' ? Number(form.stock) : undefined }
+            : { ...form, price: Number(form.price), stock: form.stock !== '' ? Number(form.stock) : 0 };
 
         try {
             const res = await fetch(url, {
@@ -941,13 +946,14 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
             description: p.description,
             price: String(p.price),
             image: p.image,
-            category: p.category
+            category: p.category,
+            stock: p.stock !== undefined ? String(p.stock) : '',
         });
         setShowForm(true);
     };
 
     const resetForm = () => {
-        setForm({ name: '', description: '', price: '', image: '', category: '' });
+        setForm({ name: '', description: '', price: '', image: '', category: '', stock: '' });
         setEditingId(null);
         setShowForm(false);
     };
@@ -981,13 +987,23 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                             rows={2}
                             style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', resize: 'vertical' }}
                         />
-                        <input
-                            type="number"
-                            placeholder="Price (₱) *"
-                            value={form.price}
-                            onChange={e => setForm({ ...form, price: e.target.value })}
-                            style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
-                        />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
+                            <input
+                                type="number"
+                                placeholder="Price (₱) *"
+                                value={form.price}
+                                onChange={e => setForm({ ...form, price: e.target.value })}
+                                style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                            />
+                            <input
+                                type="number"
+                                placeholder="Stock quantity"
+                                value={form.stock}
+                                onChange={e => setForm({ ...form, stock: e.target.value })}
+                                min="0"
+                                style={{ padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem' }}
+                            />
+                        </div>
                         <input
                             type="text"
                             placeholder="Category (e.g., Vials Only)"
@@ -1063,7 +1079,7 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                 <div style={{ flex: 1 }}>
-                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <div style={{ fontWeight: 600, marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                         {p.name}
                                         {p.soldOut && (
                                             <span style={{
@@ -1080,9 +1096,15 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                                         )}
                                     </div>
                                     <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '0.25rem' }}>{p.description}</div>
-                                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.875rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.875rem', flexWrap: 'wrap' }}>
                                         <span style={{ color: '#7c3aed', fontWeight: 600 }}>₱{p.price.toLocaleString()}</span>
                                         <span style={{ color: '#9ca3af' }}>{p.category}</span>
+                                        <span style={{
+                                            color: (p.stock ?? 0) <= 5 ? '#ef4444' : '#10b981',
+                                            fontWeight: 600,
+                                        }}>
+                                            Stock: {p.stock ?? 0}
+                                        </span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -1122,6 +1144,380 @@ function ProductsTab({ adminKey }: { adminKey: string }) {
                             </div>
                         </div>
                     ))
+                )}
+            </div>
+        </>
+    );
+}
+
+// ==================== INVENTORY TAB ====================
+function InventoryTab({ adminKey }: { adminKey: string }) {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'low' | 'out'>('all');
+    const [adjustingId, setAdjustingId] = useState<string | null>(null);
+    const [adjustValue, setAdjustValue] = useState('');
+
+    useEffect(() => { fetchProducts(); }, []);
+
+    const fetchProducts = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/products');
+            if (res.ok) setProducts(await res.json());
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updateStock = async (id: string, newStock: number) => {
+        try {
+            const res = await fetch(`/api/products?adminKey=${encodeURIComponent(adminKey)}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, stock: Math.max(0, newStock) }),
+            });
+            if (res.ok) {
+                setProducts((await res.json()).products);
+                setAdjustingId(null);
+                setAdjustValue('');
+            }
+        } catch { alert('Failed to update stock'); }
+    };
+
+    const quickAdjust = async (id: string, delta: number) => {
+        const product = products.find(p => p.id === id);
+        if (!product) return;
+        const newStock = Math.max(0, (product.stock ?? 0) + delta);
+        await updateStock(id, newStock);
+    };
+
+    const lowStockProducts = products.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 5);
+    const outOfStockProducts = products.filter(p => (p.stock ?? 0) <= 0 || p.soldOut);
+    const inStockProducts = products.filter(p => (p.stock ?? 0) > 5 && !p.soldOut);
+
+    const totalStock = products.reduce((sum, p) => sum + (p.stock ?? 0), 0);
+    const totalValue = products.reduce((sum, p) => sum + (p.stock ?? 0) * p.price, 0);
+
+    const filteredProducts = filter === 'low'
+        ? lowStockProducts
+        : filter === 'out'
+            ? outOfStockProducts
+            : products;
+
+    const getStockColor = (stock: number, soldOut?: boolean) => {
+        if (soldOut || stock <= 0) return '#ef4444';
+        if (stock <= 5) return '#f59e0b';
+        return '#10b981';
+    };
+
+    const getStockBg = (stock: number, soldOut?: boolean) => {
+        if (soldOut || stock <= 0) return '#fef2f2';
+        if (stock <= 5) return '#fffbeb';
+        return '#f0fdf4';
+    };
+
+    return (
+        <>
+            {/* Summary Cards */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '0.75rem',
+                marginBottom: '1rem',
+            }}>
+                <div style={{
+                    background: 'white',
+                    padding: '1rem',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7c3aed' }}>{totalStock}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Units</div>
+                </div>
+                <div style={{
+                    background: 'white',
+                    padding: '1rem',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#7c3aed' }}>₱{totalValue.toLocaleString()}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Total Value</div>
+                </div>
+                <div style={{
+                    background: 'white',
+                    padding: '1rem',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>{lowStockProducts.length}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Low Stock</div>
+                </div>
+                <div style={{
+                    background: 'white',
+                    padding: '1rem',
+                    borderRadius: '0.75rem',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    textAlign: 'center',
+                }}>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#ef4444' }}>{outOfStockProducts.length}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>Out of Stock</div>
+                </div>
+            </div>
+
+            {/* Low Stock Alert */}
+            {lowStockProducts.length > 0 && (
+                <div style={{
+                    background: '#fffbeb',
+                    border: '1px solid #fde68a',
+                    padding: '0.875rem',
+                    borderRadius: '0.75rem',
+                    marginBottom: '1rem',
+                    fontSize: '0.875rem',
+                }}>
+                    <div style={{ fontWeight: 600, color: '#92400e', marginBottom: '0.5rem' }}>
+                        ⚠️ Low Stock Alert
+                    </div>
+                    {lowStockProducts.map(p => (
+                        <div key={p.id} style={{ color: '#92400e', padding: '0.125rem 0' }}>
+                            {p.name} — <strong>{p.stock} left</strong>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Filter Pills */}
+            <div style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginBottom: '1rem',
+            }}>
+                {[
+                    { id: 'all' as const, label: `All (${products.length})` },
+                    { id: 'low' as const, label: `Low Stock (${lowStockProducts.length})` },
+                    { id: 'out' as const, label: `Out of Stock (${outOfStockProducts.length})` },
+                ].map(f => (
+                    <button
+                        key={f.id}
+                        onClick={() => setFilter(f.id)}
+                        style={{
+                            padding: '0.5rem 0.75rem',
+                            borderRadius: '2rem',
+                            border: 'none',
+                            background: filter === f.id ? '#7c3aed' : 'white',
+                            color: filter === f.id ? 'white' : '#6b7280',
+                            fontSize: '0.75rem',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                        }}
+                    >
+                        {f.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Refresh */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                <button onClick={fetchProducts} style={{
+                    background: 'white',
+                    border: '1px solid #e5e7eb',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    color: '#6b7280',
+                }}>
+                    {loading ? '...' : '↻ Refresh'}
+                </button>
+            </div>
+
+            {/* Inventory List */}
+            <div style={{
+                background: 'white',
+                borderRadius: '0.75rem',
+                overflow: 'hidden',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            }}>
+                <div style={{ padding: '1rem', borderBottom: '1px solid #f3f4f6', fontWeight: 600, color: '#1f2937' }}>
+                    Inventory ({filteredProducts.length} items)
+                </div>
+                {loading ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>Loading...</div>
+                ) : filteredProducts.length === 0 ? (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>No products found</div>
+                ) : (
+                    filteredProducts.map((p, i) => {
+                        const stock = p.stock ?? 0;
+                        const isAdjusting = adjustingId === p.id;
+
+                        return (
+                            <div key={p.id} style={{
+                                padding: '0.875rem 1rem',
+                                borderBottom: i < filteredProducts.length - 1 ? '1px solid #f3f4f6' : 'none',
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isAdjusting ? '0.75rem' : 0 }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 600, fontSize: '0.9375rem', marginBottom: '0.125rem' }}>
+                                            {p.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                                            {p.category} • ₱{p.price.toLocaleString()}
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {/* Stock Badge */}
+                                        <div style={{
+                                            background: getStockBg(stock, p.soldOut),
+                                            color: getStockColor(stock, p.soldOut),
+                                            padding: '0.375rem 0.75rem',
+                                            borderRadius: '2rem',
+                                            fontWeight: 700,
+                                            fontSize: '0.875rem',
+                                            minWidth: '3rem',
+                                            textAlign: 'center',
+                                        }}>
+                                            {stock}
+                                        </div>
+                                        {/* Quick Buttons */}
+                                        <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                            <button
+                                                onClick={() => quickAdjust(p.id, -1)}
+                                                disabled={stock <= 0}
+                                                style={{
+                                                    width: '2rem',
+                                                    height: '2rem',
+                                                    borderRadius: '0.375rem',
+                                                    border: '1px solid #e5e7eb',
+                                                    background: 'white',
+                                                    cursor: stock <= 0 ? 'not-allowed' : 'pointer',
+                                                    fontWeight: 700,
+                                                    fontSize: '1rem',
+                                                    color: stock <= 0 ? '#d1d5db' : '#6b7280',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >−</button>
+                                            <button
+                                                onClick={() => quickAdjust(p.id, 1)}
+                                                style={{
+                                                    width: '2rem',
+                                                    height: '2rem',
+                                                    borderRadius: '0.375rem',
+                                                    border: '1px solid #e5e7eb',
+                                                    background: 'white',
+                                                    cursor: 'pointer',
+                                                    fontWeight: 700,
+                                                    fontSize: '1rem',
+                                                    color: '#6b7280',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >+</button>
+                                        </div>
+                                        {/* Set Button */}
+                                        <button
+                                            onClick={() => {
+                                                if (isAdjusting) {
+                                                    setAdjustingId(null);
+                                                    setAdjustValue('');
+                                                } else {
+                                                    setAdjustingId(p.id);
+                                                    setAdjustValue(String(stock));
+                                                }
+                                            }}
+                                            style={{
+                                                background: isAdjusting ? '#7c3aed' : '#f3f4f6',
+                                                border: 'none',
+                                                color: isAdjusting ? 'white' : '#6b7280',
+                                                padding: '0.375rem 0.5rem',
+                                                borderRadius: '0.375rem',
+                                                cursor: 'pointer',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 500,
+                                            }}
+                                        >
+                                            Set
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Set Stock Input */}
+                                {isAdjusting && (
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: '0.5rem',
+                                        background: '#f5f3ff',
+                                        padding: '0.75rem',
+                                        borderRadius: '0.5rem',
+                                    }}>
+                                        <input
+                                            type="number"
+                                            value={adjustValue}
+                                            onChange={e => setAdjustValue(e.target.value)}
+                                            min="0"
+                                            placeholder="New stock"
+                                            autoFocus
+                                            style={{
+                                                flex: 1,
+                                                padding: '0.5rem 0.75rem',
+                                                border: '1px solid #e5e7eb',
+                                                borderRadius: '0.375rem',
+                                                fontSize: '0.875rem',
+                                            }}
+                                            onKeyDown={e => {
+                                                if (e.key === 'Enter' && adjustValue !== '') {
+                                                    updateStock(p.id, Number(adjustValue));
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                if (adjustValue !== '') {
+                                                    updateStock(p.id, Number(adjustValue));
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '0.5rem 1rem',
+                                                background: '#7c3aed',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '0.375rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                fontSize: '0.875rem',
+                                            }}
+                                        >
+                                            Save
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setAdjustingId(null);
+                                                setAdjustValue('');
+                                            }}
+                                            style={{
+                                                padding: '0.5rem 0.75rem',
+                                                background: '#f3f4f6',
+                                                color: '#6b7280',
+                                                border: 'none',
+                                                borderRadius: '0.375rem',
+                                                cursor: 'pointer',
+                                                fontSize: '0.875rem',
+                                            }}
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
                 )}
             </div>
         </>

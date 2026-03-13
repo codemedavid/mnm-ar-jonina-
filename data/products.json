@@ -6,7 +6,8 @@
     "price": 1500,
     "image": "/products/tr15-ba3-vial.svg",
     "category": "Vials Only",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr20-ba3-vial",
@@ -15,7 +16,8 @@
     "price": 1700,
     "image": "/products/tr20-ba3-vial.svg",
     "category": "Vials Only",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr30-ba10-vial",
@@ -24,7 +26,8 @@
     "price": 1900,
     "image": "/products/tr30-ba10-vial.svg",
     "category": "Vials Only",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "ghk-cu50-ba10-vial",
@@ -33,7 +36,8 @@
     "price": 1100,
     "image": "/products/ghk-cu50-ba10-vial.svg",
     "category": "Vials Only",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 1
   },
   {
     "id": "lemon-bottle-china",
@@ -42,7 +46,8 @@
     "price": 1000,
     "image": "/products/lemon-bottle-china.svg",
     "category": "Vials Only",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "aqualyx",
@@ -51,7 +56,8 @@
     "price": 2500,
     "image": "/products/aqualyx.svg",
     "category": "Vials Only",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "aqualyx-per-vial",
@@ -60,7 +66,8 @@
     "price": 250,
     "image": "/products/aqualyx-per-vial.svg",
     "category": "Vials Only",
-    "soldOut": true
+    "soldOut": true,
+    "stock": 0
   },
   {
     "id": "tr15-ba3-set",
@@ -69,7 +76,8 @@
     "price": 1700,
     "image": "/products/tr15-ba3-set.svg",
     "category": "Complete Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr20-ba3-set",
@@ -78,7 +86,8 @@
     "price": 1900,
     "image": "/products/tr20-ba3-set.svg",
     "category": "Complete Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr30-ba10-set",
@@ -87,7 +96,8 @@
     "price": 2100,
     "image": "/products/tr30-ba10-set.svg",
     "category": "Complete Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "ghk-cu50-ba10-set",
@@ -96,7 +106,8 @@
     "price": 1300,
     "image": "/products/ghk-cu50-ba10-set.svg",
     "category": "Complete Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "lemon-bottle-china-set",
@@ -105,7 +116,8 @@
     "price": 1200,
     "image": "/products/lemon-bottle-china-set.svg",
     "category": "Complete Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "aqualyx-set",
@@ -114,7 +126,8 @@
     "price": 2700,
     "image": "/products/aqualyx-set.svg",
     "category": "Complete Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr15-box-ba3-box",
@@ -123,7 +136,8 @@
     "price": 9500,
     "image": "/products/tr15-box-ba3-box.svg",
     "category": "Box Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr20-box-ba3-box",
@@ -132,7 +146,8 @@
     "price": 10500,
     "image": "/products/tr20-box-ba3-box.svg",
     "category": "Box Sets",
-    "soldOut": false
+    "soldOut": false,
+    "stock": 50
   },
   {
     "id": "tr30-box-ba10-box",
@@ -141,6 +156,7 @@
     "price": 11500,
     "image": "/products/tr30-box-ba10-box.svg",
     "category": "Box Sets",
-    "soldOut": true
+    "soldOut": true,
+    "stock": 0
   }
 ]

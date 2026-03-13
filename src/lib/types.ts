@@ -8,6 +8,7 @@ export interface Product {
   image: string;
   category?: string;
   soldOut?: boolean;
+  stock?: number;
 }
 
 export interface CartItem {
