@@ -52,31 +52,31 @@ export default function CheckoutPage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        setUploading(true);
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setProofOfPayment(data.url);
-            } else {
-                alert(data.error || 'Upload failed');
-            }
-        } catch {
-            alert('Upload failed. Please try again.');
-        } finally {
-            setUploading(false);
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Only image files are allowed (JPG, PNG, WebP, GIF)');
+            return;
         }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size must be under 5MB');
+            return;
+        }
+
+        setUploading(true);
+        const reader = new FileReader();
+        reader.onload = () => {
+            setProofOfPayment(reader.result as string);
+            setUploading(false);
+        };
+        reader.onerror = () => {
+            alert('Failed to read file. Please try again.');
+            setUploading(false);
+        };
+        reader.readAsDataURL(file);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
