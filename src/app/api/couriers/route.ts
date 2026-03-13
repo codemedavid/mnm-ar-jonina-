@@ -1,26 +1,19 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-
-const DATA_FILE = path.join(process.cwd(), 'data', 'couriers.json');
-
-async function getCouriers(): Promise<string[]> {
-    try {
-        const data = await fs.readFile(DATA_FILE, 'utf-8');
-        return JSON.parse(data);
-    } catch {
-        return [];
-    }
-}
-
-async function saveCouriers(couriers: string[]): Promise<void> {
-    await fs.writeFile(DATA_FILE, JSON.stringify(couriers, null, 2));
-}
+import { supabase } from '@/lib/supabase';
 
 // GET - List all couriers (public)
 export async function GET() {
-    const couriers = await getCouriers();
-    return NextResponse.json(couriers);
+    const { data, error } = await supabase
+        .from('couriers')
+        .select('name')
+        .order('name');
+
+    if (error) {
+        console.error('Error fetching couriers:', error);
+        return NextResponse.json([], { status: 200 });
+    }
+
+    return NextResponse.json(data.map(c => c.name));
 }
 
 // POST - Add new courier (admin only)
@@ -38,15 +31,23 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Courier name is required' }, { status: 400 });
         }
 
-        const couriers = await getCouriers();
-        if (couriers.includes(name)) {
-            return NextResponse.json({ error: 'Courier already exists' }, { status: 400 });
+        const { error } = await supabase
+            .from('couriers')
+            .insert({ name: name.trim() });
+
+        if (error) {
+            if (error.code === '23505') {
+                return NextResponse.json({ error: 'Courier already exists' }, { status: 400 });
+            }
+            throw error;
         }
 
-        couriers.push(name);
-        await saveCouriers(couriers);
+        const { data: couriers } = await supabase
+            .from('couriers')
+            .select('name')
+            .order('name');
 
-        return NextResponse.json({ success: true, couriers });
+        return NextResponse.json({ success: true, couriers: (couriers || []).map(c => c.name) });
     } catch (error) {
         console.error('Error adding courier:', error);
         return NextResponse.json({ error: 'Failed to add courier' }, { status: 500 });
@@ -64,15 +65,21 @@ export async function DELETE(request: Request) {
 
     try {
         const { name } = await request.json();
-        const couriers = await getCouriers();
-        const filtered = couriers.filter(c => c !== name);
 
-        if (filtered.length === couriers.length) {
-            return NextResponse.json({ error: 'Courier not found' }, { status: 404 });
-        }
+        const { error, count } = await supabase
+            .from('couriers')
+            .delete()
+            .eq('name', name)
+            .select();
 
-        await saveCouriers(filtered);
-        return NextResponse.json({ success: true, couriers: filtered });
+        if (error) throw error;
+
+        const { data: couriers } = await supabase
+            .from('couriers')
+            .select('name')
+            .order('name');
+
+        return NextResponse.json({ success: true, couriers: (couriers || []).map(c => c.name) });
     } catch (error) {
         console.error('Error deleting courier:', error);
         return NextResponse.json({ error: 'Failed to delete courier' }, { status: 500 });

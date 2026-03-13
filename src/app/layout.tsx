@@ -12,7 +12,10 @@ export const metadata: Metadata = {
   title: `${BUSINESS_INFO.name} - Order Now`,
   description: BUSINESS_INFO.tagline,
   icons: {
-    icon: '/icon.png',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png' },
+    ],
     apple: '/apple-icon.png',
   },
 };
