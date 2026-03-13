@@ -125,9 +125,8 @@ export async function updateOrder(orderNumber: string, updates: Partial<Order>):
     // Map updates to snake_case
     const dbUpdates: any = {};
     if (updates.status) dbUpdates.status = updates.status;
-    if (updates.trackingNumber) dbUpdates.tracking_number = updates.trackingNumber;
-
-    // Add other fields as needed, but usually we just update status/tracking
+    if (updates.trackingNumber !== undefined) dbUpdates.tracking_number = updates.trackingNumber;
+    if (updates.courier !== undefined) dbUpdates.courier = updates.courier;
 
     const { data, error } = await supabase
         .from('orders')

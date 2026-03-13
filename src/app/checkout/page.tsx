@@ -246,6 +246,33 @@ export default function CheckoutPage() {
                                         </select>
                                     </div>
 
+                                    {selectedCourier.toLowerCase() === 'lalamove' && location === 'bacoor' && (
+                                        <div style={{
+                                            marginTop: '0.5rem',
+                                            padding: '1rem 1.25rem',
+                                            background: 'linear-gradient(135deg, rgba(252, 231, 243, 0.5), rgba(233, 213, 255, 0.3))',
+                                            borderRadius: 'var(--radius-lg)',
+                                            border: '1px solid rgba(243, 209, 231, 0.6)',
+                                            fontSize: '0.85rem',
+                                            lineHeight: 1.6,
+                                        }}>
+                                            <p style={{ fontWeight: 700, color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
+                                                Lalamove Delivery
+                                            </p>
+                                            <p style={{ color: 'var(--color-text-muted)' }}>
+                                                Hi, please fill out your delivery details with this link for a smooth delivery:{' '}
+                                                <a
+                                                    href="https://delivery.lalamove.com/forms/PH94e24f258b124b0087a0f3493a8e9bc1"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'underline' }}
+                                                >
+                                                    Fill out Lalamove delivery form
+                                                </a>
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div className="form-group">
                                         <label className="form-label">Order Notes (Optional)</label>
                                         <textarea

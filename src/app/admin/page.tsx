@@ -227,6 +227,23 @@ function OrdersTab({ adminKey }: { adminKey: string }) {
         }
     };
 
+    const deleteOrderHandler = async (orderNumber: string) => {
+        if (!confirm(`Are you sure you want to delete order ${orderNumber}? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`/api/orders/${orderNumber}?adminKey=${encodeURIComponent(adminKey)}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                setOrders(orders.filter(o => o.orderNumber !== orderNumber));
+            } else {
+                const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+                alert(err.error || 'Failed to delete order');
+            }
+        } catch {
+            alert('Failed to delete order');
+        }
+    };
+
     const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.status === filter);
     const stats = {
         pending: orders.filter(o => o.status === 'pending').length,
@@ -313,6 +330,7 @@ function OrdersTab({ adminKey }: { adminKey: string }) {
                             isExpanded={expandedOrder === order.orderNumber}
                             onToggle={() => setExpandedOrder(expandedOrder === order.orderNumber ? null : order.orderNumber)}
                             onUpdate={updateOrderStatus}
+                            onDelete={deleteOrderHandler}
                         />
                     ))
                 )}
@@ -321,11 +339,12 @@ function OrdersTab({ adminKey }: { adminKey: string }) {
     );
 }
 
-function OrderCard({ order, isExpanded, onToggle, onUpdate }: {
+function OrderCard({ order, isExpanded, onToggle, onUpdate, onDelete }: {
     order: Order;
     isExpanded: boolean;
     onToggle: () => void;
     onUpdate: (orderNumber: string, status: OrderStatus, trackingNumber?: string, courier?: string) => Promise<void>;
+    onDelete: (orderNumber: string) => Promise<void>;
 }) {
     const [status, setStatus] = useState(order.status);
     const [trackingNumber, setTrackingNumber] = useState(order.trackingNumber || '');
@@ -516,6 +535,20 @@ function OrderCard({ order, isExpanded, onToggle, onUpdate }: {
                                 }}
                             >
                                 {saving ? 'Saving...' : 'Save Changes'}
+                            </button>
+                            <button
+                                onClick={() => onDelete(order.orderNumber)}
+                                style={{
+                                    padding: '0.75rem',
+                                    background: '#fef2f2',
+                                    color: '#ef4444',
+                                    border: '1px solid #fecaca',
+                                    borderRadius: '0.375rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Delete Order
                             </button>
                         </div>
                     </div>
@@ -1245,10 +1278,13 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
 
     const getLocStock = (p: Product) => p.stock[selectedLocation] ?? 0;
 
+    const [savingStock, setSavingStock] = useState(false);
+
     const updateStock = async (id: string, newStock: number) => {
         const product = products.find(p => p.id === id);
         if (!product) return;
         const updatedStock = { ...product.stock, [selectedLocation]: Math.max(0, newStock) };
+        setSavingStock(true);
         try {
             const res = await fetch(`/api/products?adminKey=${encodeURIComponent(adminKey)}`, {
                 method: 'PATCH',
@@ -1256,11 +1292,16 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
                 body: JSON.stringify({ id, stock: updatedStock }),
             });
             if (res.ok) {
-                setProducts((await res.json()).products);
+                const data = await res.json();
+                setProducts(data.products);
                 setAdjustingId(null);
                 setAdjustValue('');
+            } else {
+                const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+                alert(err.error || 'Failed to update stock');
             }
         } catch { alert('Failed to update stock'); }
+        finally { setSavingStock(false); }
     };
 
     const quickAdjust = async (p: Product, delta: number) => {
@@ -1430,7 +1471,8 @@ function InventoryTab({ adminKey }: { adminKey: string }) {
                                             onKeyDown={e => { if (e.key === 'Enter' && adjustValue !== '') updateStock(p.id, Number(adjustValue)); }}
                                         />
                                         <button onClick={() => { if (adjustValue !== '') updateStock(p.id, Number(adjustValue)); }}
-                                            style={{ padding: '0.5rem 1rem', background: '#7c3aed', color: 'white', border: 'none', borderRadius: '0.375rem', fontWeight: 600, cursor: 'pointer', fontSize: '0.875rem' }}>Save</button>
+                                            disabled={savingStock}
+                                            style={{ padding: '0.5rem 1rem', background: savingStock ? '#a78bfa' : '#7c3aed', color: 'white', border: 'none', borderRadius: '0.375rem', fontWeight: 600, cursor: savingStock ? 'not-allowed' : 'pointer', fontSize: '0.875rem' }}>{savingStock ? 'Saving...' : 'Save'}</button>
                                         <button onClick={() => { setAdjustingId(null); setAdjustValue(''); }}
                                             style={{ padding: '0.5rem 0.75rem', background: '#f3f4f6', color: '#6b7280', border: 'none', borderRadius: '0.375rem', cursor: 'pointer', fontSize: '0.875rem' }}>Cancel</button>
                                     </div>
