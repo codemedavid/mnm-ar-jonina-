@@ -11,6 +11,10 @@ const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfa
 export const metadata: Metadata = {
   title: `${BUSINESS_INFO.name} - Order Now`,
   description: BUSINESS_INFO.tagline,
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({
